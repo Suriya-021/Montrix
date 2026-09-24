@@ -17,7 +17,7 @@ async def lifespan(app: FastAPI):
 
 # Create the FastAPI application instance.
 app = FastAPI(
-    title="SpendWise API",
+    title="Montrix API",
     version="1.0.0",
     description="Personal expense tracking API",
     lifespan=lifespan
@@ -39,5 +39,5 @@ app.include_router(expenses_router)
 def health_check():
     return {
         "status": "ok",
-        "message": "SpendWise API is running"
+        "message": "Montrix API is running"
     }

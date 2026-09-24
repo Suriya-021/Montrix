@@ -1,4 +1,4 @@
-# SpendWise 💸
+# Montrix 💸
 
 A personal expense tracking application built with React and FastAPI.
 

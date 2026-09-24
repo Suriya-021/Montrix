@@ -14,8 +14,8 @@ function Sidebar({ onAddExpense }) {
       <div className="sidebar-top">
         {/* Application Logo */}
         <div className="sidebar-logo">
-          <span className="logo-spend">Spend</span>
-          <span className="logo-wise">Wise</span>
+          <span className="logo-mon">Mon</span>
+          <span className="logo-trix">trix</span>
         </div>
 
         {/* Navigation Menu */}

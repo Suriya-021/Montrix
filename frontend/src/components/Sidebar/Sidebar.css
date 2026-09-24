@@ -27,11 +27,11 @@
   align-items: center;
 }
 
-.logo-spend {
+.logo-mon {
   color: var(--text-primary, #ffffff);
 }
 
-.logo-wise {
+.logo-trix {
   color: var(--accent-primary, #06D6A0);
 }
 
@@ -120,11 +120,11 @@
     padding: 0;
   }
 
-  .logo-spend {
+  .logo-mon {
     display: none;
   }
 
-  .logo-wise {
+  .logo-trix {
     font-size: 24px;
   }
   

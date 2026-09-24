@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Sidebar from './components/Sidebar/Sidebar';
 import Dashboard from './pages/Dashboard';
 import Expenses from './pages/Expenses';
+import AddExpenseModal from './components/AddExpenseModal/AddExpenseModal';
 
 /**
  * Main Application Component.
@@ -35,13 +36,16 @@ function App() {
           </Routes>
         </main>
         
-        {/* Modal placeholder */}
-        {showModal && (
-          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: '#333', padding: '2rem', zIndex: 200, color: '#fff', borderRadius: '8px' }}>
-            <p>Add Expense Modal Placeholder</p>
-            <button onClick={() => setShowModal(false)} style={{ padding: '0.5rem 1rem', marginTop: '1rem', cursor: 'pointer' }}>Close</button>
-          </div>
-        )}
+        {/* Add Expense Modal */}
+        <AddExpenseModal 
+          isOpen={showModal} 
+          onClose={() => setShowModal(false)}
+          onAdd={(expenseData) => {
+            console.log("New expense data:", expenseData);
+            // We'll connect this to the API in the next session!
+            setShowModal(false);
+          }}
+        />
       </div>
     </Router>
   );
