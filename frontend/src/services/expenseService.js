@@ -29,6 +29,20 @@ export const expenseService = {
   },
 
   /**
+   * Fetch summary statistics from the backend
+   */
+  async getStats() {
+    try {
+      const response = await fetch(`${API_URL}/stats`);
+      if (!response.ok) throw new Error('Failed to fetch stats');
+      return await response.json();
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+      throw error;
+    }
+  },
+
+  /**
    * Send a new expense to the backend to be saved in the database
    */
   async create(expenseData) {

@@ -14,6 +14,12 @@ router = APIRouter(prefix="/api/expenses", tags=["Expenses"])
 def get_all_expenses():
     return expense_service.get_all_expenses()
 
+# GET /api/expenses/stats -> Get stats
+# MUST be defined before /{expense_id} so FastAPI doesn't think "stats" is an ID!
+@router.get("/stats")
+def get_stats():
+    return expense_service.get_expense_stats()
+
 # GET /api/expenses/{id} -> Get ONE expense
 @router.get("/{expense_id}", response_model=ExpenseResponse)
 def get_expense(expense_id: int):

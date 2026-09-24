@@ -22,7 +22,8 @@ const CATEGORY_COLORS = {
  * Shows summary statistics, a category breakdown chart, and recent transactions.
  */
 function Dashboard() {
-  const [expenses, setExpenses] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [recentTransactions, setRecentTransactions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -33,9 +34,19 @@ function Dashboard() {
   const loadDashboardData = async () => {
     try {
       setIsLoading(true);
-      const data = await expenseService.getAll();
-      // Sort newest first
-      setExpenses(data.sort((a, b) => new Date(b.date) - new Date(a.date)));
+      
+      // Fetch stats and all expenses simultaneously
+      const [statsData, allExpenses] = await Promise.all([
+        expenseService.getStats(),
+        expenseService.getAll()
+      ]);
+      
+      setStats(statsData);
+      
+      // Sort newest first and get top 5
+      const sorted = allExpenses.sort((a, b) => new Date(b.date) - new Date(a.date));
+      setRecentTransactions(sorted.slice(0, 5));
+      
     } catch (err) {
       setError('Failed to load dashboard data.');
     } finally {
@@ -43,34 +54,8 @@ function Dashboard() {
     }
   };
 
-  // 1. Calculate Summary Stats
-  const totalSpent = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-  
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
-  const thisMonthSpent = expenses
-    .filter(exp => {
-      const expDate = new Date(exp.date);
-      return expDate.getMonth() === currentMonth && expDate.getFullYear() === currentYear;
-    })
-    .reduce((sum, exp) => sum + exp.amount, 0);
-
-  const transactionCount = expenses.length;
-
-  // 2. Prepare Chart Data (Group by Category)
-  const categoryTotals = expenses.reduce((acc, exp) => {
-    acc[exp.category] = (acc[exp.category] || 0) + exp.amount;
-    return acc;
-  }, {});
-
-  // Convert the grouped object into an array for Recharts
-  const chartData = Object.keys(categoryTotals).map(key => ({
-    name: key,
-    value: categoryTotals[key]
-  })).sort((a, b) => b.value - a.value); // Sort biggest slices first
-
-  // 3. Get Recent Transactions (Top 5)
-  const recentTransactions = expenses.slice(0, 5);
+  // Convert the grouped object into an array for Recharts if stats is loaded
+  const chartData = stats ? stats.category_breakdown.sort((a, b) => b.value - a.value) : [];
 
   // Helper functions
   const formatCurrency = (amount) => {
@@ -128,15 +113,15 @@ function Dashboard() {
       <div className="stat-grid">
         <div className="stat-card">
           <div className="stat-card__label">Total Spent</div>
-          <div className="stat-card__value">{formatCurrency(totalSpent)}</div>
+          <div className="stat-card__value">{formatCurrency(stats?.total_spent || 0)}</div>
         </div>
         <div className="stat-card">
           <div className="stat-card__label">This Month</div>
-          <div className="stat-card__value">{formatCurrency(thisMonthSpent)}</div>
+          <div className="stat-card__value">{formatCurrency(stats?.this_month_spent || 0)}</div>
         </div>
         <div className="stat-card">
           <div className="stat-card__label">Transactions</div>
-          <div className="stat-card__value">{transactionCount}</div>
+          <div className="stat-card__value">{stats?.transactions_count || 0}</div>
         </div>
       </div>
 
@@ -144,7 +129,7 @@ function Dashboard() {
         {/* Left Side: Donut Chart */}
         <div className="glass-card">
           <h2 className="section-title" style={{ marginBottom: '1.5rem' }}>Category Breakdown</h2>
-          {expenses.length > 0 ? (
+          {chartData.length > 0 ? (
             <div style={{ height: '300px', width: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>

@@ -29,3 +29,6 @@ def delete_expense(expense_id: int):
     if not success:
         raise HTTPException(status_code=404, detail="Expense not found")
     return {"message": "Expense deleted successfully"}
+
+def get_expense_stats():
+    return expense_db.get_stats_from_db()

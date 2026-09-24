@@ -80,3 +80,35 @@ def delete_expense_from_db(expense_id: int):
     conn.close()
     
     return rows_deleted > 0
+
+def get_stats_from_db():
+    """Calculates summary statistics from the database using SQL."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # 1. Total spent and transaction count
+    cursor.execute('SELECT SUM(amount), COUNT(id) FROM expenses')
+    total_spent, count = cursor.fetchone()
+    total_spent = total_spent or 0
+    
+    # 2. This month spent
+    import datetime
+    now = datetime.datetime.now()
+    # Format as YYYY-MM-DD
+    start_of_month = now.replace(day=1).strftime('%Y-%m-%d')
+    
+    cursor.execute('SELECT SUM(amount) FROM expenses WHERE date >= ?', (start_of_month,))
+    this_month = cursor.fetchone()[0] or 0
+    
+    # 3. Category breakdown
+    cursor.execute('SELECT category, SUM(amount) FROM expenses GROUP BY category')
+    categories = [{"name": row[0], "value": row[1]} for row in cursor.fetchall()]
+    
+    conn.close()
+    
+    return {
+        "total_spent": total_spent,
+        "this_month_spent": this_month,
+        "transactions_count": count,
+        "category_breakdown": categories
+    }
