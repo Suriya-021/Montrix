@@ -15,6 +15,10 @@ async def lifespan(app: FastAPI):
     yield
     print("Shutting down server...")
 
+from dotenv import load_dotenv
+
+load_dotenv() # Load environment variables from .env file
+
 # Create the FastAPI application instance.
 app = FastAPI(
     title="Montrix API",
@@ -23,10 +27,16 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS Middleware
+import os
+
+# CORS Configuration
+# In production, we don't want to allow all origins ("*"). We read allowed origins from the environment.
+origins_str = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
+origins = [origin.strip() for origin in origins_str.split(",")]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],       # Which websites can call this API
+    allow_origins=origins,
     allow_credentials=True,    # Allow cookies/auth headers
     allow_methods=["*"],       # Allow GET, POST, PUT, DELETE
     allow_headers=["*"],       # Allow all headers

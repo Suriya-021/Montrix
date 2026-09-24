@@ -14,8 +14,8 @@
   --bg-elevated: #1E293B;
 
   /* Glass */
-  --glass-bg: rgba(30, 41, 59, 0.6);
-  --glass-border: rgba(148, 163, 184, 0.15);
+  --glass-bg: rgba(30, 41, 59, 0.4);
+  --glass-border: rgba(255, 255, 255, 0.08);
   --glass-blur: 16px;
 
   /* Accent */
@@ -143,6 +143,12 @@ a:hover {
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   padding: var(--space-5);
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.glass-card:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
 }
 
 .glass-card--accent {
@@ -165,7 +171,13 @@ a:hover {
   border-radius: var(--radius-md);
   border-top: 2px solid var(--accent-primary);
   padding: var(--space-5);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
 }
 
 .stat-card__label {

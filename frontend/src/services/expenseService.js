@@ -9,7 +9,8 @@
  */
 
 // The base URL for our FastAPI backend
-const API_URL = 'http://localhost:8000/api/expenses';
+// Use the environment variable if available, otherwise default to local development URL
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/expenses';
 
 export const expenseService = {
   /**
