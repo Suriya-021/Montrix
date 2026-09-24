@@ -1,0 +1,83 @@
+/* 
+ * Minimal CSS for Toast component. 
+ * Positioning and entry animations.
+ */
+
+.toast {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  background-color: var(--glass-bg, #222222);
+  color: var(--text-primary, #ffffff);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  min-width: 300px;
+  animation: slideInUp 0.3s ease forwards;
+}
+
+.toast-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.toast-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.toast--success .toast-icon {
+  color: var(--accent-primary, #06D6A0);
+}
+
+.toast--error .toast-icon {
+  color: #EF476F; /* Standard red/error color */
+}
+
+.toast-message {
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.toast-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted, #888888);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  transition: color 0.2s ease;
+}
+
+.toast-close-btn:hover {
+  color: var(--text-primary, #ffffff);
+}
+
+/* Entry Animation */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive positioning for mobile */
+@media (max-width: 767px) {
+  .toast {
+    bottom: 80px; /* Above the mobile nav bar */
+    left: 1rem;
+    right: 1rem;
+    min-width: 0;
+  }
+}
