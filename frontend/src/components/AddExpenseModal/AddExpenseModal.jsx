@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import './AddExpenseModal.css';
 
@@ -9,19 +9,40 @@ const CATEGORIES = [
 
 /**
  * AddExpenseModal Component
- * A popup form to create a new expense entry.
+ * A popup form to create a new expense entry or edit an existing one.
  */
-function AddExpenseModal({ isOpen, onClose, onAdd }) {
+function AddExpenseModal({ isOpen, onClose, onAdd, expenseToEdit }) {
   // We use useState to keep track of what the user is typing in the form
   const [formData, setFormData] = useState({
     amount: '',
-    category: 'Food', // Default category
+    category: 'Food',
     description: '',
-    date: new Date().toISOString().split('T')[0] // Default to today's date (YYYY-MM-DD)
+    date: new Date().toISOString().split('T')[0]
   });
 
-  // Keep track of any validation errors
   const [errors, setErrors] = useState({});
+
+  // useEffect watches the `expenseToEdit` and `isOpen` variables.
+  // When the modal opens, if we passed an expense to edit, we fill the form with its data!
+  useEffect(() => {
+    if (expenseToEdit) {
+      setFormData({
+        amount: expenseToEdit.amount,
+        category: expenseToEdit.category,
+        description: expenseToEdit.description,
+        // Ensure the date is formatted for the HTML input (YYYY-MM-DD)
+        date: new Date(expenseToEdit.date).toISOString().split('T')[0]
+      });
+    } else {
+      // Otherwise, start with a fresh blank form
+      setFormData({
+        amount: '',
+        category: 'Food',
+        description: '',
+        date: new Date().toISOString().split('T')[0]
+      });
+    }
+  }, [expenseToEdit, isOpen]);
 
   // If the modal isn't open, don't render anything
   if (!isOpen) return null;
@@ -29,7 +50,6 @@ function AddExpenseModal({ isOpen, onClose, onAdd }) {
   // Handle changes when the user types in the input fields
   const handleChange = (e) => {
     const { name, value } = e.target;
-    // Update the specific field in our formData state
     setFormData((prev) => ({ ...prev, [name]: value }));
     
     // Clear errors for this field as they type
@@ -40,7 +60,7 @@ function AddExpenseModal({ isOpen, onClose, onAdd }) {
 
   // Handle form submission
   const handleSubmit = (e) => {
-    e.preventDefault(); // Prevent the page from refreshing
+    e.preventDefault();
     
     // Simple validation
     const newErrors = {};
@@ -51,20 +71,19 @@ function AddExpenseModal({ isOpen, onClose, onAdd }) {
       newErrors.description = 'Please enter a description';
     }
 
-    // If there are errors, stop and show them
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
 
-    // If everything is good, pass the data back up to the parent component
-    // We convert the amount to a number explicitly
+    // Pass the data back up, including the ID if we are editing
     onAdd({
       ...formData,
-      amount: Number(formData.amount)
+      amount: Number(formData.amount),
+      id: expenseToEdit ? expenseToEdit.id : undefined
     });
     
-    // Reset the form for the next time
+    // Reset the form
     setFormData({
       amount: '',
       category: 'Food',
@@ -77,7 +96,8 @@ function AddExpenseModal({ isOpen, onClose, onAdd }) {
     <div className="modal-overlay">
       <div className="modal">
         <div className="modal__header">
-          <h2 className="modal__title">Add New Expense</h2>
+          {/* Change title based on whether we are editing or adding */}
+          <h2 className="modal__title">{expenseToEdit ? 'Edit Expense' : 'Add New Expense'}</h2>
           <button className="modal__close" onClick={onClose}>
             <X size={24} />
           </button>
@@ -148,7 +168,7 @@ function AddExpenseModal({ isOpen, onClose, onAdd }) {
               Cancel
             </button>
             <button type="submit" className="btn btn--primary">
-              Save Expense
+              {expenseToEdit ? 'Update Expense' : 'Save Expense'}
             </button>
           </div>
         </form>

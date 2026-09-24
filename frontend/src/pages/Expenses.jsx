@@ -1,35 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, Receipt, AlertCircle, Loader2 } from 'lucide-react';
+import { Trash2, Receipt, AlertCircle, Loader2, Pencil } from 'lucide-react';
 import { expenseService } from '../services/expenseService';
+import AddExpenseModal from '../components/AddExpenseModal/AddExpenseModal';
+import Toast from '../components/Toast/Toast';
 
 /**
  * Expenses Page Component
  * Displays a list of all expenses fetched from the backend.
- * Includes loading states, error handling, and the ability to delete expenses.
+ * Includes loading states, error handling, and the ability to delete/edit expenses.
  */
 function Expenses() {
-  // State to hold our list of expenses
   const [expenses, setExpenses] = useState([]);
-  
-  // State to track if we are currently waiting for the API to respond
   const [isLoading, setIsLoading] = useState(true);
-  
-  // State to hold any error messages if the API call fails
   const [error, setError] = useState(null);
+  
+  // States for Edit functionality
+  const [editingExpense, setEditingExpense] = useState(null);
+  const [toast, setToast] = useState({ show: false, message: '', type: '' });
 
-  // useEffect runs once when the component first appears on the screen
   useEffect(() => {
     loadExpenses();
   }, []);
 
-  // Function to fetch expenses from our backend
   const loadExpenses = async () => {
     try {
       setIsLoading(true);
       setError(null);
       const data = await expenseService.getAll();
-      
-      // Sort expenses by date (newest first)
       const sortedData = data.sort((a, b) => new Date(b.date) - new Date(a.date));
       setExpenses(sortedData);
     } catch (err) {
@@ -40,34 +37,43 @@ function Expenses() {
     }
   };
 
-  // Function to handle deleting an expense
   const handleDelete = async (id) => {
-    // Ask for confirmation before deleting
-    if (!window.confirm('Are you sure you want to delete this expense?')) {
-      return;
-    }
-    
+    if (!window.confirm('Are you sure you want to delete this expense?')) return;
     try {
       await expenseService.delete(id);
-      // If successful, remove the deleted item from our local state
-      // This updates the UI without needing to refresh the page or hit the API again
       setExpenses(expenses.filter(expense => expense.id !== id));
+      setToast({ show: true, message: 'Expense deleted successfully', type: 'success' });
     } catch (err) {
-      alert('Failed to delete expense. Please try again.');
+      setToast({ show: true, message: 'Failed to delete expense', type: 'error' });
     }
   };
 
-  // Helper function to format the amount as Indian Rupees
+  const handleEditClick = (expense) => {
+    setEditingExpense(expense);
+  };
+
+  const handleSaveEdit = async (expenseData) => {
+    try {
+      // 1. Send update to API
+      const updatedExpense = await expenseService.update(expenseData.id, expenseData);
+      
+      // 2. Update local state so UI updates instantly
+      setExpenses(expenses.map(exp => exp.id === updatedExpense.id ? updatedExpense : exp));
+      
+      // 3. Show success and close modal
+      setToast({ show: true, message: 'Expense updated successfully!', type: 'success' });
+      setEditingExpense(null);
+    } catch (err) {
+      setToast({ show: true, message: err.message || 'Failed to update expense', type: 'error' });
+    }
+  };
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0, // No decimals for cleaner look
+      style: 'currency', currency: 'INR', minimumFractionDigits: 0, maximumFractionDigits: 0,
     }).format(amount);
   };
 
-  // Helper function to format the date into a readable format (e.g., "Jan 23, 2026")
   const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'short', day: 'numeric' };
     return new Date(dateString).toLocaleDateString('en-IN', options);
@@ -75,14 +81,21 @@ function Expenses() {
 
   return (
     <div>
+      {/* Toast Notification */}
+      {toast.show && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast({ show: false, message: '', type: '' })} 
+        />
+      )}
+
       <div className="page-header">
         <h1 className="page-title">Expenses</h1>
       </div>
 
-      {/* Conditional Rendering: Show loading, error, empty, or actual data */}
       {isLoading ? (
         <div className="empty-state">
-          {/* We use a simple inline style keyframe animation for the spinner */}
           <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
           <Loader2 className="empty-state__icon" style={{ animation: 'spin 1s linear infinite' }} />
           <p className="empty-state__text">Loading expenses...</p>
@@ -92,9 +105,7 @@ function Expenses() {
           <AlertCircle className="empty-state__icon" style={{ color: 'var(--error)' }} />
           <h3 className="empty-state__title">Oops!</h3>
           <p className="empty-state__text">{error}</p>
-          <button className="btn btn--primary" onClick={loadExpenses}>
-            Try Again
-          </button>
+          <button className="btn btn--primary" onClick={loadExpenses}>Try Again</button>
         </div>
       ) : expenses.length === 0 ? (
         <div className="empty-state">
@@ -120,14 +131,21 @@ function Expenses() {
                   <tr key={expense.id}>
                     <td className="date">{formatDate(expense.date)}</td>
                     <td>
-                      {/* We dynamically apply the category color badge class defined in index.css */}
-                      <span className={`badge badge--${expense.category.toLowerCase()}`}>
-                        {expense.category}
-                      </span>
+                      <span className={`badge badge--${expense.category.toLowerCase()}`}>{expense.category}</span>
                     </td>
                     <td>{expense.description}</td>
                     <td className="amount">{formatCurrency(expense.amount)}</td>
                     <td className="actions">
+                      {/* Edit Button */}
+                      <button 
+                        className="action-btn" 
+                        style={{ marginRight: '0.5rem' }}
+                        onClick={() => handleEditClick(expense)}
+                        title="Edit Expense"
+                      >
+                        <Pencil size={18} />
+                      </button>
+                      {/* Delete Button */}
                       <button 
                         className="action-btn action-btn--delete" 
                         onClick={() => handleDelete(expense.id)}
@@ -143,6 +161,14 @@ function Expenses() {
           </div>
         </div>
       )}
+
+      {/* Edit Modal Instance */}
+      <AddExpenseModal
+        isOpen={editingExpense !== null}
+        onClose={() => setEditingExpense(null)}
+        onAdd={handleSaveEdit}
+        expenseToEdit={editingExpense}
+      />
     </div>
   );
 }

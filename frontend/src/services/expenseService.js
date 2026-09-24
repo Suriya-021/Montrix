@@ -55,6 +55,31 @@ export const expenseService = {
   },
 
   /**
+   * Update an existing expense by its ID
+   */
+  async update(id, expenseData) {
+    try {
+      const response = await fetch(`${API_URL}/${id}`, {
+        method: 'PUT', // PUT is used to update existing data
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(expenseData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Failed to update expense');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error(`Error updating expense ${id}:`, error);
+      throw error;
+    }
+  },
+
+  /**
    * Delete an expense by its ID
    */
   async delete(id) {
