@@ -64,6 +64,14 @@ function App() {
             {/* Placeholder routes for future pages */}
             <Route path="/analytics" element={<div style={{ padding: '2rem' }}>Analytics coming soon...</div>} />
             <Route path="/settings" element={<div style={{ padding: '2rem' }}>Settings coming soon...</div>} />
+            
+            {/* 404 Catch-All Route */}
+            <Route path="*" element={
+              <div className="empty-state">
+                <h3 className="empty-state__title">404 - Page Not Found</h3>
+                <p className="empty-state__text">The page you are looking for doesn't exist.</p>
+              </div>
+            } />
           </Routes>
         </main>
         
@@ -73,6 +81,11 @@ function App() {
           onClose={() => setShowModal(false)}
           onAdd={handleSaveExpense}
         />
+
+        {/* Mobile Floating Action Button (Hidden on Desktop) */}
+        <button className="fab-mobile" onClick={handleAddExpense} title="Add Expense">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </button>
       </div>
     </Router>
   );
