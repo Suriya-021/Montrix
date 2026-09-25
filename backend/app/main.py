@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 
 from app.db import init_db
 from app.routes.expenses import router as expenses_router
+from app.routes import auth
 
 # This "lifespan" function runs exactly once when the server starts up,
 # and again when it shuts down. We use it to prepare things.
@@ -42,8 +43,9 @@ app.add_middleware(
     allow_headers=["*"],       # Allow all headers
 )
 
-# Connect our Expenses routes to the main app!
+# Connect our routes to the main app!
 app.include_router(expenses_router)
+app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 
 @app.get("/api/health")
 def health_check():

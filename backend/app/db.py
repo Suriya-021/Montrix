@@ -25,6 +25,17 @@ def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
     
+    # SQL command to create our users table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            email TEXT NOT NULL UNIQUE,
+            password_hash TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+        )
+    ''')
+
     # SQL command to create our expenses table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS expenses (
