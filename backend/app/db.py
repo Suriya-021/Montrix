@@ -40,11 +40,13 @@ def init_db():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS expenses (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
             amount REAL NOT NULL,
             category TEXT NOT NULL,
             description TEXT NOT NULL,
             date TEXT NOT NULL,
-            created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+            created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+            FOREIGN KEY (user_id) REFERENCES users (id)
         )
     ''')
     

@@ -1,6 +1,7 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Receipt, BarChart3, Settings, Plus } from 'lucide-react';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { LayoutDashboard, Receipt, BarChart3, Settings, Plus, LogOut } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
 import './Sidebar.css';
 
 /**
@@ -8,6 +9,14 @@ import './Sidebar.css';
  * Allows the user to navigate through different sections of the application.
  */
 function Sidebar({ onAddExpense }) {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   return (
     <aside className="sidebar">
       {/* Top section containing logo and navigation links */}
@@ -44,6 +53,10 @@ function Sidebar({ onAddExpense }) {
 
       {/* Bottom section containing the Add Expense button */}
       <div className="sidebar-bottom">
+        <button className="nav-item" onClick={handleLogout} style={{ width: '100%', marginBottom: '16px', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+          <LogOut className="nav-icon" />
+          <span className="nav-text">Logout</span>
+        </button>
         <button className="add-expense-btn" onClick={onAddExpense}>
           <Plus className="btn-icon" />
           <span className="btn-text">Add Expense</span>

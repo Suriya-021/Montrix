@@ -9,19 +9,23 @@
  */
 
 // The base URL for our FastAPI backend
-// Use the environment variable if available, otherwise default to local development URL
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/expenses';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+const API_URL = `${BASE_URL}/expenses`;
+
+// Helper function to get the current token and format the headers
+function getHeaders() {
+  const token = localStorage.getItem('token');
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': token ? `Bearer ${token}` : ''
+  };
+}
 
 export const expenseService = {
-  /**
-   * Fetch all expenses from the backend
-   */
   async getAll() {
     try {
-      const response = await fetch(API_URL);
+      const response = await fetch(API_URL, { headers: getHeaders() });
       if (!response.ok) throw new Error('Failed to fetch expenses');
-      
-      // Convert the JSON response into a JavaScript object/array
       return await response.json();
     } catch (error) {
       console.error("Error fetching expenses:", error);
@@ -29,12 +33,9 @@ export const expenseService = {
     }
   },
 
-  /**
-   * Fetch summary statistics from the backend
-   */
   async getStats() {
     try {
-      const response = await fetch(`${API_URL}/stats`);
+      const response = await fetch(`${API_URL}/stats`, { headers: getHeaders() });
       if (!response.ok) throw new Error('Failed to fetch stats');
       return await response.json();
     } catch (error) {
@@ -43,25 +44,18 @@ export const expenseService = {
     }
   },
 
-  /**
-   * Send a new expense to the backend to be saved in the database
-   */
   async create(expenseData) {
     try {
       const response = await fetch(API_URL, {
-        method: 'POST', // POST tells the server we are creating new data
-        headers: {
-          'Content-Type': 'application/json', // We are sending JSON data
-        },
-        body: JSON.stringify(expenseData), // Convert our JS object to a JSON string
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(expenseData),
       });
 
       if (!response.ok) {
-        // Try to get a specific error message from the backend if possible
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.detail || 'Failed to create expense');
       }
-      
       return await response.json();
     } catch (error) {
       console.error("Error creating expense:", error);
@@ -69,16 +63,11 @@ export const expenseService = {
     }
   },
 
-  /**
-   * Update an existing expense by its ID
-   */
   async update(id, expenseData) {
     try {
       const response = await fetch(`${API_URL}/${id}`, {
-        method: 'PUT', // PUT is used to update existing data
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        method: 'PUT',
+        headers: getHeaders(),
         body: JSON.stringify(expenseData),
       });
 
@@ -86,7 +75,6 @@ export const expenseService = {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.detail || 'Failed to update expense');
       }
-      
       return await response.json();
     } catch (error) {
       console.error(`Error updating expense ${id}:`, error);
@@ -94,13 +82,11 @@ export const expenseService = {
     }
   },
 
-  /**
-   * Delete an expense by its ID
-   */
   async delete(id) {
     try {
       const response = await fetch(`${API_URL}/${id}`, {
-        method: 'DELETE', // DELETE tells the server to remove the data
+        method: 'DELETE',
+        headers: getHeaders(),
       });
 
       if (!response.ok) throw new Error('Failed to delete expense');
