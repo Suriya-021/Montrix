@@ -14,6 +14,13 @@ A premium, full-stack personal expense tracking application built with **React (
 - **FastAPI Backend:** High-performance, fully typed Python backend using Pydantic for strict data validation.
 - **Lazy Loading:** Frontend routes are code-split using `React.lazy` and `Suspense` for blazing fast initial loads.
 
+## 🔐 Version 2 Updates: Authentication & Multi-User
+Montrix now supports full user isolation and authentication:
+* **JWT Authentication:** Secure token-based login and registration.
+* **Password Hashing:** Passwords are cryptographically salted and hashed using `bcrypt`.
+* **Data Privacy:** Users can only view and modify their own expenses.
+* **Protected Routing:** React frontend strictly guards dashboard access.
+
 ## 🛠️ Tech Stack
 
 | Layer | Technology |
