@@ -96,3 +96,74 @@ def get_ai_coach_insights(current_user: dict = Depends(get_current_user)):
             "Please verify your GEMINI_API_KEY in the .env file.",
             "Keep logging your expenses in the meantime!"
         ]}
+
+@router.get("/cashflow")
+def get_cashflow_data(current_user: dict = Depends(get_current_user)):
+    """
+    Returns the last 6 months of income vs expense data for the cash flow chart.
+    """
+    user_id = current_user['id']
+    
+    from datetime import datetime, date
+    import calendar
+    from app.database.expense_db import get_all_expenses
+    from app.database.income_db import get_incomes
+    
+    expenses = get_all_expenses(user_id)
+    incomes = get_incomes(user_id)
+    
+    # Initialize the last 6 months
+    months = []
+    now = datetime.now()
+    
+    for i in range(5, -1, -1):
+        # Calculate month and year
+        m = now.month - i
+        y = now.year
+        if m <= 0:
+            m += 12
+            y -= 1
+            
+        month_date = date(y, m, 1)
+        month_str = month_date.strftime('%b')
+        month_key = month_date.strftime('%Y-%m')
+        
+        months.append({
+            "key": month_key,
+            "month": month_str,
+            "income": 0,
+            "expenses": 0
+        })
+        
+    # Aggregate expenses
+    for exp in expenses:
+        exp_date = exp.get('date')
+        if not exp_date: continue
+        try:
+            exp_key = exp_date[:7] # YYYY-MM
+            for m in months:
+                if m['key'] == exp_key:
+                    m['expenses'] += float(exp.get('amount', 0))
+        except:
+            pass
+            
+    # Aggregate income
+    for inc in incomes:
+        inc_date = inc.get('date')
+        if not inc_date: continue
+        try:
+            inc_key = inc_date[:7] # YYYY-MM
+            for m in months:
+                if m['key'] == inc_key:
+                    m['income'] += float(inc.get('amount', 0))
+        except:
+            pass
+            
+    # Clean up output
+    for m in months:
+        m['income'] = round(m['income'])
+        m['expenses'] = round(m['expenses'])
+        del m['key']
+        
+    return months
+

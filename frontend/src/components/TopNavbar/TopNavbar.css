@@ -1,0 +1,186 @@
+/* ================================================
+   V2 TopNavbar — Sticky Header with Search & Profile
+   ================================================ */
+
+.topnav {
+  position: fixed;
+  top: 0;
+  left: var(--sidebar-width);
+  right: 0;
+  height: var(--topnav-height);
+  background: rgba(11, 15, 25, 0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--card-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-8);
+  z-index: 40;
+  transition: left var(--transition-slow);
+}
+
+/* --- Left: Page Title --- */
+.topnav__left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.topnav__title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+/* --- Center: Search --- */
+.topnav__center {
+  flex: 1;
+  max-width: 400px;
+  margin: 0 var(--space-8);
+}
+
+.topnav__search {
+  position: relative;
+  width: 100%;
+}
+
+.topnav__search-icon {
+  position: absolute;
+  left: var(--space-4);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.topnav__search-input {
+  width: 100%;
+  padding: var(--space-2) var(--space-4) var(--space-2) 40px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-xl);
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--text-primary);
+  outline: none;
+  transition: all var(--transition-base);
+}
+
+.topnav__search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.topnav__search-input:focus {
+  border-color: var(--accent-blue);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* --- Right: Actions --- */
+.topnav__right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.topnav__btn {
+  position: relative;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-base);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.topnav__btn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.topnav__btn--active {
+  color: var(--accent-cyan);
+}
+
+.topnav__badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-purple);
+  border: 2px solid var(--bg-primary);
+}
+
+.topnav__month-select {
+  padding: var(--space-2) var(--space-3);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+  transition: all var(--transition-base);
+}
+
+.topnav__month-select:hover,
+.topnav__month-select:focus {
+  border-color: var(--accent-blue);
+  color: var(--text-primary);
+}
+
+.topnav__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background: var(--accent-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: box-shadow var(--transition-base);
+}
+
+.topnav__avatar:hover {
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+}
+
+/* === Responsive === */
+@media (max-width: 1023px) {
+  .topnav {
+    left: var(--sidebar-collapsed);
+    padding: 0 var(--space-5);
+  }
+
+  .topnav__center {
+    max-width: 280px;
+    margin: 0 var(--space-4);
+  }
+}
+
+@media (max-width: 767px) {
+  .topnav {
+    left: 0;
+    padding: 0 var(--space-4);
+  }
+
+  .topnav__center {
+    display: none;
+  }
+
+  .topnav__title {
+    font-size: 16px;
+  }
+}

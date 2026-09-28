@@ -1,6 +1,7 @@
 import React, { useState, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Sidebar from './components/Sidebar/Sidebar';
+import TopNavbar from './components/TopNavbar/TopNavbar';
 import AddExpenseModal from './components/AddExpenseModal/AddExpenseModal';
 import Toast from './components/Toast/Toast';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -18,7 +19,7 @@ const Subscriptions = lazy(() => import('./pages/SubscriptionsPage'));
 const Income = lazy(() => import('./pages/IncomePage'));
 const Analytics = lazy(() => import('./pages/AnalyticsPage'));
 
-// Extracted the protected layout out of the main App component
+// V2 Protected Layout with TopNavbar
 const ProtectedLayout = ({ handleAddExpense, toast, setToast, showModal, setShowModal, handleSaveExpense }) => {
   return (
     <div className="app-layout">
@@ -31,30 +32,32 @@ const ProtectedLayout = ({ handleAddExpense, toast, setToast, showModal, setShow
       )}
 
       <Sidebar onAddExpense={handleAddExpense} />
+      <TopNavbar />
 
       <main className="main-content">
-        <Suspense fallback={
-          <div className="empty-state" style={{ height: '50vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
-            <Loader2 className="empty-state__icon" style={{ animation: 'spin 1s linear infinite' }} />
-          </div>
-        }>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/expenses" element={<Expenses />} />
-            <Route path="/income" element={<Income />} />
-            <Route path="/planning" element={<Planning />} />
-            <Route path="/subscriptions" element={<Subscriptions />} />
-            <Route path="/analytics" element={<Analytics />} />
-            <Route path="/settings" element={<div className="empty-state"><h3 className="empty-state__title">Settings</h3><p className="empty-state__text">Coming soon...</p></div>} />
-            <Route path="*" element={
-              <div className="empty-state">
-                <h3 className="empty-state__title">404 - Page Not Found</h3>
-                <p className="empty-state__text">The page you are looking for doesn't exist.</p>
-              </div>
-            } />
-          </Routes>
-        </Suspense>
+        <div className="main-content__inner">
+          <Suspense fallback={
+            <div className="empty-state" style={{ height: '50vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <Loader2 className="empty-state__icon" style={{ animation: 'spin 1s linear infinite' }} />
+            </div>
+          }>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/expenses" element={<Expenses />} />
+              <Route path="/income" element={<Income />} />
+              <Route path="/planning" element={<Planning />} />
+              <Route path="/subscriptions" element={<Subscriptions />} />
+              <Route path="/analytics" element={<Analytics />} />
+              <Route path="/settings" element={<div className="empty-state"><h3 className="empty-state__title">Settings</h3><p className="empty-state__text">Coming soon...</p></div>} />
+              <Route path="*" element={
+                <div className="empty-state">
+                  <h3 className="empty-state__title">404 - Page Not Found</h3>
+                  <p className="empty-state__text">The page you are looking for doesn't exist.</p>
+                </div>
+              } />
+            </Routes>
+          </Suspense>
+        </div>
       </main>
       
       <AddExpenseModal 

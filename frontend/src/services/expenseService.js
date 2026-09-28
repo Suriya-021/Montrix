@@ -44,6 +44,17 @@ export const expenseService = {
     }
   },
 
+  async getCashFlow() {
+    try {
+      const response = await fetch(`${BASE_URL}/insights/cashflow`, { headers: getHeaders() });
+      if (!response.ok) throw new Error('Failed to fetch cash flow data');
+      return await response.json();
+    } catch (error) {
+      console.error("Error fetching cash flow data:", error);
+      throw error;
+    }
+  },
+
   async create(expenseData) {
     try {
       const response = await fetch(API_URL, {

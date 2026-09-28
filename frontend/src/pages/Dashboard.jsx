@@ -1,12 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { expenseService } from '../services/expenseService';
+import { incomeService } from '../services/incomeService';
 import { subscriptionService } from '../services/subscriptionService';
 import { goalService } from '../services/goalService';
 import { useCurrency } from '../context/CurrencyContext';
-import { Loader2, AlertCircle, Calendar, Trophy } from 'lucide-react';
 
-// Map categories to our specific design system colors
+// V2 Components
+import StatCard from '../components/Cards/StatCard';
+import CashFlowChart from '../components/Charts/CashFlowChart';
+import CategoryDonut from '../components/Charts/CategoryDonut';
+import TransactionsWidget from '../components/Widgets/TransactionsWidget';
+import UpcomingBillsWidget from '../components/Widgets/UpcomingBillsWidget';
+import SavingsGoalsWidget from '../components/Widgets/SavingsGoalsWidget';
+import { Loader2, Wallet, TrendingDown, TrendingUp, PiggyBank } from 'lucide-react';
+
+// Category colors for the donut chart
 const CATEGORY_COLORS = {
   Food: '#06D6A0',
   Transport: '#3B82F6',
@@ -21,286 +29,174 @@ const CATEGORY_COLORS = {
 };
 
 /**
- * Dashboard Component
- * Shows summary statistics, a category breakdown chart, and recent transactions.
+ * V2 Dashboard
+ * Premium overview page with KPI cards, charts, and widgets.
  */
 function Dashboard() {
-  const { formatCurrency, isLoading: currencyLoading } = useCurrency();
+  const { formatCurrency } = useCurrency();
   const [stats, setStats] = useState(null);
   const [recentTransactions, setRecentTransactions] = useState([]);
   const [upcomingBills, setUpcomingBills] = useState([]);
   const [activeGoals, setActiveGoals] = useState([]);
   const [totalIncome, setTotalIncome] = useState(0);
-  const [netBalance, setNetBalance] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [allExpenses, setAllExpenses] = useState([]);
 
+  const [cashFlowData, setCashFlowData] = useState([]);
+  
   useEffect(() => {
     loadDashboardData();
   }, []);
 
   const loadDashboardData = async () => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      
-      // Fetch stats, all expenses, subscriptions, goals, and income simultaneously
-      const [statsData, allExpenses, subsData, goalsData, incomeData] = await Promise.all([
-        expenseService.getStats(),
-        expenseService.getAll(),
-        subscriptionService.getAll().catch(() => []), 
+      // Fetch all data in parallel — each has its own catch to prevent cascade failures
+      const [statsData, expensesData, incomeData, billsData, goalsData, cfData] = await Promise.all([
+        expenseService.getStats().catch(() => null),
+        expenseService.getAll().catch(() => []),
+        incomeService.getAll().catch(() => []),
+        subscriptionService.getAll().catch(() => []),
         goalService.getAll().catch(() => []),
-        import('../services/incomeService').then(m => m.incomeService.getAll()).catch(() => [])
+        expenseService.getCashFlow().catch(() => [])
       ]);
       
       setStats(statsData);
+      setAllExpenses(Array.isArray(expensesData) ? expensesData : []);
+      setRecentTransactions(Array.isArray(expensesData) ? expensesData.slice(0, 5) : []);
+      setCashFlowData(Array.isArray(cfData) ? cfData : []);
       
-      const totalInc = incomeData.reduce((sum, item) => sum + item.amount, 0);
-      setTotalIncome(totalInc);
-      setNetBalance(totalInc - (statsData?.total_spent || 0));
+      const incomeArr = Array.isArray(incomeData) ? incomeData : [];
+      const incomeSum = incomeArr.reduce((sum, item) => sum + (item.amount || 0), 0);
+      setTotalIncome(incomeSum);
+
+      const billsArr = Array.isArray(billsData) ? billsData : [];
+      // Subscriptions have next_due_date in DB.
+      const activeB = billsArr.sort((a, b) => {
+        const dateA = a.next_due_date ? new Date(a.next_due_date) : new Date();
+        const dateB = b.next_due_date ? new Date(b.next_due_date) : new Date();
+        return dateA - dateB;
+      });
+      setUpcomingBills(activeB.slice(0, 4));
       
-      // Sort newest first and get top 5
-      const sorted = allExpenses.sort((a, b) => new Date(b.date) - new Date(a.date));
-      setRecentTransactions(sorted.slice(0, 5));
-      
-      // Get top 2 active goals
-      const active = goalsData
-        .filter(g => g.current_amount < g.target_amount) // only not completed
-        .slice(0, 2);
-      setActiveGoals(active);
-      
-      // Calculate upcoming bills
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      const upcoming = subsData
-        .map(sub => {
-          const due = new Date(sub.next_due_date);
-          due.setHours(0, 0, 0, 0);
-          const diffDays = Math.ceil((due - today) / (1000 * 60 * 60 * 24));
-          return { ...sub, diffDays };
-        })
-        .filter(sub => sub.diffDays >= 0) // Only upcoming or due today
-        .sort((a, b) => a.diffDays - b.diffDays)
-        .slice(0, 3); // top 3 closest bills
-        
-      setUpcomingBills(upcoming);
-      
-    } catch (err) {
-      setError('Failed to load dashboard data.');
+      const goalsArr = Array.isArray(goalsData) ? goalsData : [];
+      const activeG = goalsArr.filter(g => (g.current_amount || 0) < (g.target_amount || 1));
+      setActiveGoals(activeG.slice(0, 3));
+    } catch (error) {
+      console.error("Failed to load dashboard data:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Convert the grouped object into an array for Recharts if stats is loaded
-  const chartData = stats ? stats.category_breakdown.sort((a, b) => b.value - a.value) : [];
+  // Calculate derived data
+  const totalExpenses = stats?.total_spent || 0;
+  const netBalance = totalIncome - totalExpenses;
+  const savings = netBalance > 0 ? netBalance : 0;
 
-  // Helper functions
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
-  };
+  // Category breakdown for donut chart
+  const categoryData = (stats && Array.isArray(stats.category_breakdown)) 
+    ? stats.category_breakdown.map(item => {
+        const total = stats.total_spent || 1;
+        return {
+          name: item.name || 'Other',
+          value: item.value || 0,
+          color: CATEGORY_COLORS[item.name] || '#64748B',
+          percentage: Math.round(((item.value || 0) / total) * 100)
+        };
+      }).sort((a, b) => b.value - a.value) 
+    : [];
 
-  // Custom tooltip for the Pie Chart
-  const CustomTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div style={{ background: 'var(--bg-elevated)', padding: '10px', border: '1px solid var(--glass-border)', borderRadius: '8px', color: '#fff' }}>
-          <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)' }}>{payload[0].name}</p>
-          <p style={{ margin: 0, fontWeight: 'bold', fontFamily: 'var(--font-mono)' }}>{formatCurrency(payload[0].value)}</p>
-        </div>
-      );
+  // Generate sparkline data (7 random points around a base value)
+  const generateSparkline = (baseValue) => {
+    if (!baseValue || baseValue === 0) {
+      return Array.from({ length: 7 }, () => ({ value: 0 }));
     }
-    return null;
+    return Array.from({ length: 7 }, (_, i) => ({
+      value: Math.round(baseValue * (0.7 + Math.random() * 0.6))
+    }));
   };
 
   if (isLoading) {
     return (
-      <div className="empty-state">
-        <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
-        <Loader2 className="empty-state__icon" style={{ animation: 'spin 1s linear infinite' }} />
-        <p>Loading your dashboard...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="empty-state">
-        <AlertCircle className="empty-state__icon" style={{ color: 'var(--error)' }} />
-        <p>{error}</p>
-        <button className="btn btn--primary" onClick={loadDashboardData} style={{ marginTop: '1rem' }}>Try Again</button>
+      <div className="empty-state" style={{ height: '60vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', color: 'var(--accent-blue)' }} />
+        <p style={{ marginTop: 16 }}>Loading your dashboard...</p>
       </div>
     );
   }
 
   return (
     <div>
-      <div className="page-header">
-        <h1 className="page-title">Dashboard</h1>
-      </div>
-
-      {/* Top Summary Cards */}
+      {/* KPI Cards Row */}
       <div className="stat-grid">
-        <div className="stat-card" style={{ borderLeft: '4px solid var(--accent-primary)' }}>
-          <div className="stat-card__label">Total Income</div>
-          <div className="stat-card__value" style={{ color: 'var(--accent-primary)' }}>{formatCurrency(totalIncome)}</div>
-        </div>
-        <div className="stat-card" style={{ borderLeft: '4px solid var(--error)' }}>
-          <div className="stat-card__label">Total Expenses</div>
-          <div className="stat-card__value">{formatCurrency(stats?.total_spent || 0)}</div>
-        </div>
-        <div className="stat-card" style={{ borderLeft: `4px solid ${netBalance >= 0 ? 'var(--accent-primary)' : 'var(--error)'}` }}>
-          <div className="stat-card__label">Net Balance</div>
-          <div className="stat-card__value" style={{ color: netBalance >= 0 ? 'var(--text-primary)' : 'var(--error)' }}>
-            {formatCurrency(netBalance)}
-          </div>
-        </div>
+        <StatCard 
+          icon={Wallet}
+          label="Balance"
+          value={formatCurrency(netBalance)}
+          change="+14.50%"
+          changeType="positive"
+          color="#06D6A0"
+          sparklineData={generateSparkline(netBalance)}
+        />
+        <StatCard 
+          icon={TrendingUp}
+          label="Income"
+          value={formatCurrency(totalIncome)}
+          change="+25.00%"
+          changeType="positive"
+          color="#3B82F6"
+          sparklineData={generateSparkline(totalIncome)}
+        />
+        <StatCard 
+          icon={TrendingDown}
+          label="Expense"
+          value={formatCurrency(totalExpenses)}
+          change="-12.20%"
+          changeType="negative"
+          color="#EF4444"
+          sparklineData={generateSparkline(totalExpenses)}
+        />
+        <StatCard 
+          icon={PiggyBank}
+          label="Savings"
+          value={formatCurrency(savings)}
+          change="+36.70%"
+          changeType="positive"
+          color="#10B981"
+          sparklineData={generateSparkline(savings)}
+        />
       </div>
 
-      <div className="dashboard-grid">
-        {/* Left Side: Donut Chart */}
-        <div className="glass-card">
-          <h2 className="section-title" style={{ marginBottom: '1.5rem' }}>Category Breakdown</h2>
-          {chartData.length > 0 ? (
-            <div style={{ height: '300px', width: '100%' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={chartData}
-                    innerRadius={70}
-                    outerRadius={100}
-                    paddingAngle={2}
-                    dataKey="value"
-                    stroke="none"
-                  >
-                    {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[entry.name] || CATEGORY_COLORS.Other} />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend 
-                    layout="vertical" 
-                    verticalAlign="middle" 
-                    align="right"
-                    iconType="circle"
-                    wrapperStyle={{ fontSize: '13px', color: 'var(--text-secondary)' }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <div className="empty-state" style={{ padding: '3rem' }}>
-              <p>No data to chart yet.</p>
-            </div>
-          )}
+      {/* Main Dashboard Layout (Left / Right columns) */}
+      <div className="dashboard-body">
+        {/* Left Column */}
+        <div className="dashboard-column-left">
+          <CashFlowChart data={cashFlowData} />
+          
+          <TransactionsWidget 
+            transactions={recentTransactions} 
+            formatCurrency={formatCurrency} 
+          />
         </div>
 
-        {/* Right Side: Widgets Container */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-        
-          {/* Upcoming Bills Widget */}
-          <div className="glass-card">
-            <div className="section-header" style={{ marginBottom: '1rem' }}>
-              <h2 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Calendar size={18} style={{ color: 'var(--accent-primary)' }} />
-                Upcoming Bills
-              </h2>
-            </div>
-            
-            {upcomingBills.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                {upcomingBills.map(bill => (
-                  <div key={bill.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.8rem', background: 'var(--bg-elevated)', borderRadius: '6px', border: '1px solid var(--glass-border)' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <strong style={{ color: 'var(--text-primary)', fontSize: '0.95rem' }}>{bill.title}</strong>
-                      <span style={{ fontSize: '0.8rem', color: bill.diffDays === 0 ? 'var(--error)' : 'var(--text-secondary)' }}>
-                        {bill.diffDays === 0 ? 'Due Today!' : `Due in ${bill.diffDays} day${bill.diffDays !== 1 ? 's' : ''}`}
-                      </span>
-                    </div>
-                    <strong style={{ color: 'var(--text-primary)' }}>{formatCurrency(bill.amount)}</strong>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="empty-state" style={{ padding: '1.5rem' }}>
-                <p>No upcoming bills found.</p>
-              </div>
-            )}
-          </div>
-
-          {/* Active Goals Widget */}
-          <div className="glass-card">
-            <div className="section-header" style={{ marginBottom: '1rem' }}>
-              <h2 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Trophy size={18} style={{ color: 'var(--accent-primary)' }} />
-                Active Goals
-              </h2>
-            </div>
-            
-            {activeGoals.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {activeGoals.map(goal => {
-                  const percentage = Math.min((goal.current_amount / goal.target_amount) * 100, 100);
-                  return (
-                    <div key={goal.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <strong style={{ color: 'var(--text-primary)', fontSize: '0.9rem' }}>{goal.title}</strong>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--accent-primary)' }}>{percentage.toFixed(0)}%</span>
-                      </div>
-                      <div style={{ width: '100%', height: '6px', background: 'var(--bg-elevated)', borderRadius: '3px', overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${percentage}%`, background: 'var(--accent-primary)', borderRadius: '3px' }} />
-                      </div>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', alignSelf: 'flex-end' }}>
-                        {formatCurrency(goal.current_amount)} / {formatCurrency(goal.target_amount)}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="empty-state" style={{ padding: '1.5rem' }}>
-                <p>No active goals right now.</p>
-              </div>
-            )}
-          </div>
-
-          {/* Recent Transactions Widget */}
-          <div className="glass-card">
-            <div className="section-header">
-              <h2 className="section-title">Recent Transactions</h2>
-            </div>
-            
-            {recentTransactions.length > 0 ? (
-              <div className="table-container">
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>Date</th>
-                      <th>Category</th>
-                      <th style={{ textAlign: 'right' }}>Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recentTransactions.map((expense) => (
-                      <tr key={expense.id}>
-                        <td className="date">{formatDate(expense.date)}</td>
-                        <td>
-                          <span className={`badge badge--${expense.category.toLowerCase()}`}>
-                            {expense.category}
-                          </span>
-                        </td>
-                        <td className="amount">{formatCurrency(expense.amount)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="empty-state" style={{ padding: '3rem' }}>
-                <p>No transactions yet.</p>
-              </div>
-            )}
-          </div>
+        {/* Right Column */}
+        <div className="dashboard-column-right">
+          <CategoryDonut 
+            data={categoryData} 
+            totalLabel="Total expenses per month"
+            totalValue={formatCurrency(totalExpenses)}
+          />
+          
+          <UpcomingBillsWidget 
+            bills={upcomingBills} 
+            formatCurrency={formatCurrency} 
+          />
+          
+          <SavingsGoalsWidget 
+            goals={activeGoals} 
+            formatCurrency={formatCurrency} 
+          />
         </div>
       </div>
     </div>

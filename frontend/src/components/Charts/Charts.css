@@ -1,0 +1,155 @@
+/* Charts.css */
+
+.chart-card {
+  padding: var(--card-padding);
+  border-radius: var(--card-radius);
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.chart-header {
+  margin-bottom: var(--space-2);
+}
+
+.flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chart-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.chart-link {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color var(--transition-base);
+}
+
+.chart-link:hover {
+  color: var(--accent-cyan);
+}
+
+/* Tooltip Styles */
+.chart-tooltip {
+  background: #111827; /* Dark glass theme */
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: var(--space-3) var(--space-4);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+}
+
+.chart-tooltip-label {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin-top: 0;
+  margin-bottom: var(--space-2);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding-bottom: var(--space-1);
+}
+
+.chart-tooltip-item {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-1);
+  font-size: 0.875rem;
+}
+
+.chart-tooltip-name {
+  font-weight: 500;
+}
+
+/* Donut Chart Specific */
+.donut-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.donut-chart-wrapper {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.chart-center-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+}
+
+.center-label-text {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  line-height: 1.2;
+  margin-top: 4px;
+}
+
+.center-label-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* Legend Styles */
+.chart-legend {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.chart-legend__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+.chart-legend__item:last-child {
+  border-bottom: none;
+}
+
+.legend-left, .legend-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.chart-legend__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.legend-name {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.legend-value {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.legend-percent {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  width: 32px;
+  text-align: right;
+}
