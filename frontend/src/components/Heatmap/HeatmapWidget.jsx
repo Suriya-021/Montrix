@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ActivityCalendar } from 'react-activity-calendar';
+import { Tooltip } from 'react-tooltip';
+import 'react-tooltip/dist/react-tooltip.css';
 import { expenseService } from '../../services/expenseService';
 import { useCurrency } from '../../context/CurrencyContext';
 import { Loader2, Activity } from 'lucide-react';
@@ -82,12 +84,12 @@ function HeatmapWidget() {
   }
 
   const explicitTheme = {
-    light: ['rgba(255, 255, 255, 0.05)', 'rgba(6, 214, 160, 0.2)', 'rgba(6, 214, 160, 0.5)', 'rgba(6, 214, 160, 0.8)', '#06D6A0'],
-    dark: ['rgba(255, 255, 255, 0.05)', 'rgba(6, 214, 160, 0.2)', 'rgba(6, 214, 160, 0.5)', 'rgba(6, 214, 160, 0.8)', '#06D6A0'],
+    light: ['#1e293b', '#0d3d30', '#0a6c50', '#08a177', '#06d6a0'],
+    dark: ['#1e293b', '#0d3d30', '#0a6c50', '#08a177', '#06d6a0'],
   };
 
   return (
-    <div className="glass-card">
+    <div className="glass-card" style={{ width: '100%', minWidth: 0 }}>
       <h2 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
         <Activity size={20} style={{ color: 'var(--accent-primary)' }} />
         Daily Spending Intensity
@@ -102,17 +104,32 @@ function HeatmapWidget() {
             labels={{
               totalCount: '{{count}} spent in the last year',
             }}
-            renderBlock={(block, activity) => (
-              <div title={`${formatCurrency(activity.count)} on ${activity.date}`}>
-                {block}
-              </div>
-            )}
+            renderBlock={(block, activity) => {
+              return React.cloneElement(block, {
+                'data-tooltip-id': 'heatmap-tooltip',
+                'data-tooltip-content': `${formatCurrency(activity.count)} on ${activity.date}`
+              });
+            }}
             blockSize={14}
             blockMargin={4}
             fontSize={14}
           />
         </div>
       </div>
+      
+      <Tooltip 
+        id="heatmap-tooltip" 
+        style={{ 
+          backgroundColor: 'var(--bg-elevated)', 
+          border: '1px solid var(--glass-border)',
+          borderRadius: '8px',
+          color: '#fff',
+          padding: '8px 12px',
+          fontSize: '13px',
+          fontFamily: 'var(--font-sans)',
+          zIndex: 1000
+        }}
+      />
     </div>
   );
 }

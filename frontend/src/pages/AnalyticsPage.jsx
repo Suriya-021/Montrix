@@ -146,10 +146,10 @@ function AnalyticsPage() {
         </div>
       )}
 
-      <div className="dashboard-grid" style={{ gridTemplateColumns: '1fr', gap: '1.5rem' }}>
+      <div className="dashboard-grid" style={{ gridTemplateColumns: '1fr', gap: '1.5rem', width: '100%' }}>
         <AICoachWidget />
         
-        <div className="glass-card">
+        <div className="glass-card" style={{ width: '100%', minWidth: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
             <h2 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
               <TrendingUp size={20} style={{ color: 'var(--accent-primary)' }} />
