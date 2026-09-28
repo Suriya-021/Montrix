@@ -1,5 +1,8 @@
 from fastapi import APIRouter, Depends
+from fastapi.responses import StreamingResponse
 from typing import List
+import io
+import csv
 
 from app.schemas.expense import ExpenseCreate, ExpenseResponse
 from app.services import expense_service
@@ -14,6 +17,43 @@ def get_all_expenses(current_user: dict = Depends(get_current_user)):
 @router.get("/stats")
 def get_stats(current_user: dict = Depends(get_current_user)):
     return expense_service.get_expense_stats(current_user['id'])
+
+from datetime import datetime
+
+@router.get("/export")
+def export_expenses_csv(current_user: dict = Depends(get_current_user)):
+    expenses = expense_service.get_all_expenses(current_user['id'])
+    
+    # Create an in-memory string buffer
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Write the header row
+    writer.writerow(['Date (Transaction)', 'Description', 'Category', 'Amount (INR)', 'Logged At'])
+    
+    # Write data rows
+    for exp in expenses:
+        writer.writerow([
+            exp['date'], 
+            exp.get('description', exp.get('title', '')), 
+            exp['category'],
+            exp['amount'],
+            exp.get('created_at', '')
+        ])
+        
+    # Reset the buffer's cursor to the beginning
+    output.seek(0)
+    
+    # Generate a dynamic filename with today's date
+    today_str = datetime.now().strftime('%Y-%m-%d')
+    filename = f"expenses_export_{today_str}.csv"
+    
+    # Stream the file back to the client
+    return StreamingResponse(
+        iter([output.getvalue()]), 
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
 
 @router.get("/{expense_id}", response_model=ExpenseResponse)
 def get_expense(expense_id: int, current_user: dict = Depends(get_current_user)):

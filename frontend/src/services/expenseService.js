@@ -95,5 +95,33 @@ export const expenseService = {
       console.error(`Error deleting expense ${id}:`, error);
       throw error;
     }
+  },
+
+  async exportCSV() {
+    try {
+      const response = await fetch(`${API_URL}/export`, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+      
+      if (!response.ok) throw new Error('Failed to export expenses');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      
+      const today = new Date().toISOString().split('T')[0];
+      a.download = `expenses_export_${today}.csv`;
+      
+      document.body.appendChild(a);
+      a.click();
+      
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error exporting expenses:', error);
+      throw error;
+    }
   }
 };
