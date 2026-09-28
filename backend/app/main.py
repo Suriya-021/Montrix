@@ -8,6 +8,7 @@ from app.routes.budgets import router as budgets_router
 from app.routes.subscriptions import router as subscriptions_router
 from app.routes.goals import router as goals_router
 from app.routes.income import router as income_router
+from app.routes.insights import router as insights_router
 from app.routes import auth
 
 # This "lifespan" function runs exactly once when the server starts up,
@@ -53,6 +54,7 @@ app.include_router(budgets_router, prefix="/api/budgets", tags=["Budgets"])
 app.include_router(subscriptions_router, prefix="/api/subscriptions", tags=["Subscriptions"])
 app.include_router(goals_router, prefix="/api/goals", tags=["Goals"])
 app.include_router(income_router, prefix="/api/income", tags=["Income"])
+app.include_router(insights_router)
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 
 @app.get("/api/health")

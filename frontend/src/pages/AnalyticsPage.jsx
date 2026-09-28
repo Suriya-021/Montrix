@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { expenseService } from '../services/expenseService';
+import AICoachWidget from '../components/AICoach/AICoachWidget';
+import HeatmapWidget from '../components/Heatmap/HeatmapWidget';
 import { Loader2, AlertCircle, Download, TrendingUp } from 'lucide-react';
 
 function AnalyticsPage() {
@@ -144,7 +146,9 @@ function AnalyticsPage() {
         </div>
       )}
 
-      <div className="dashboard-grid" style={{ gridTemplateColumns: '1fr' }}>
+      <div className="dashboard-grid" style={{ gridTemplateColumns: '1fr', gap: '1.5rem' }}>
+        <AICoachWidget />
+        
         <div className="glass-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
             <h2 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
@@ -204,6 +208,8 @@ function AnalyticsPage() {
             </ResponsiveContainer>
           </div>
         </div>
+        
+        <HeatmapWidget />
       </div>
     </div>
   );

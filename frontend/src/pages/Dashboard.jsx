@@ -3,6 +3,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recha
 import { expenseService } from '../services/expenseService';
 import { subscriptionService } from '../services/subscriptionService';
 import { goalService } from '../services/goalService';
+import { useCurrency } from '../context/CurrencyContext';
 import { Loader2, AlertCircle, Calendar, Trophy } from 'lucide-react';
 
 // Map categories to our specific design system colors
@@ -24,6 +25,7 @@ const CATEGORY_COLORS = {
  * Shows summary statistics, a category breakdown chart, and recent transactions.
  */
 function Dashboard() {
+  const { formatCurrency, isLoading: currencyLoading } = useCurrency();
   const [stats, setStats] = useState(null);
   const [recentTransactions, setRecentTransactions] = useState([]);
   const [upcomingBills, setUpcomingBills] = useState([]);
@@ -94,14 +96,6 @@ function Dashboard() {
   const chartData = stats ? stats.category_breakdown.sort((a, b) => b.value - a.value) : [];
 
   // Helper functions
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
-
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
   };
