@@ -13,7 +13,7 @@ const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 const API_URL = `${BASE_URL}/expenses`;
 
 // Helper function to get the current token and format the headers
-function getHeaders() {
+export function getHeaders() {
   const token = localStorage.getItem('token');
   return {
     'Content-Type': 'application/json',

@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Receipt, BarChart3, Settings, Plus, LogOut } from 'lucide-react';
+import { LayoutDashboard, Receipt, BarChart3, Settings, Plus, LogOut, Target } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import './Sidebar.css';
 
@@ -37,6 +37,11 @@ function Sidebar({ onAddExpense }) {
           <NavLink to="/expenses" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
             <Receipt className="nav-icon" />
             <span className="nav-text">Expenses</span>
+          </NavLink>
+          
+          <NavLink to="/budgets" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
+            <Target className="nav-icon" />
+            <span className="nav-text">Budgets</span>
           </NavLink>
           
           <NavLink to="/analytics" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>

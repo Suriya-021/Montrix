@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 
 from app.db import init_db
 from app.routes.expenses import router as expenses_router
+from app.routes.budgets import router as budgets_router
 from app.routes import auth
 
 # This "lifespan" function runs exactly once when the server starts up,
@@ -45,6 +46,7 @@ app.add_middleware(
 
 # Connect our routes to the main app!
 app.include_router(expenses_router)
+app.include_router(budgets_router, prefix="/api/budgets", tags=["Budgets"])
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 
 @app.get("/api/health")
