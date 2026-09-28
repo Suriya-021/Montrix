@@ -6,6 +6,7 @@ from app.db import init_db
 from app.routes.expenses import router as expenses_router
 from app.routes.budgets import router as budgets_router
 from app.routes.subscriptions import router as subscriptions_router
+from app.routes.goals import router as goals_router
 from app.routes import auth
 
 # This "lifespan" function runs exactly once when the server starts up,
@@ -49,6 +50,7 @@ app.add_middleware(
 app.include_router(expenses_router)
 app.include_router(budgets_router, prefix="/api/budgets", tags=["Budgets"])
 app.include_router(subscriptions_router, prefix="/api/subscriptions", tags=["Subscriptions"])
+app.include_router(goals_router, prefix="/api/goals", tags=["Goals"])
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 
 @app.get("/api/health")

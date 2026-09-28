@@ -15,6 +15,7 @@ const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Expenses = lazy(() => import('./pages/Expenses'));
 const Budgets = lazy(() => import('./pages/BudgetsPage'));
 const Subscriptions = lazy(() => import('./pages/SubscriptionsPage'));
+const Goals = lazy(() => import('./pages/GoalsPage'));
 
 // Extracted the protected layout out of the main App component
 const ProtectedLayout = ({ handleAddExpense, toast, setToast, showModal, setShowModal, handleSaveExpense }) => {
@@ -42,6 +43,7 @@ const ProtectedLayout = ({ handleAddExpense, toast, setToast, showModal, setShow
             <Route path="/expenses" element={<Expenses />} />
             <Route path="/budgets" element={<Budgets />} />
             <Route path="/subscriptions" element={<Subscriptions />} />
+            <Route path="/goals" element={<Goals />} />
             <Route path="/analytics" element={<div className="empty-state"><h3 className="empty-state__title">Analytics</h3><p className="empty-state__text">Coming soon...</p></div>} />
             <Route path="/settings" element={<div className="empty-state"><h3 className="empty-state__title">Settings</h3><p className="empty-state__text">Coming soon...</p></div>} />
             <Route path="*" element={

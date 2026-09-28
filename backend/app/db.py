@@ -78,6 +78,20 @@ def init_db():
         )
     ''')
     
+    # SQL command to create our goals table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS goals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            target_amount REAL NOT NULL,
+            current_amount REAL NOT NULL DEFAULT 0.0,
+            target_date TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+    ''')
+    
     # Commit saves our changes to the file
     conn.commit()
     # Always close the connection when done!
