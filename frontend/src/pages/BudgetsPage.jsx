@@ -8,7 +8,7 @@ const CATEGORIES = [
   'Bills', 'Health', 'Education', 'Games', 'Investment', 'Other'
 ];
 
-function BudgetsPage() {
+function BudgetsPage({ hideHeader = false }) {
   const [budgets, setBudgets] = useState([]);
   const [spentByCategory, setSpentByCategory] = useState({});
   const [isLoading, setIsLoading] = useState(true);
@@ -113,16 +113,31 @@ function BudgetsPage() {
 
   return (
     <div>
-      <div className="page-header">
-        <h1 className="page-title">Smart Budgets</h1>
-        <input 
-          type="month" 
-          className="form-input" 
-          value={currentMonth}
-          onChange={(e) => setCurrentMonth(e.target.value)}
-          style={{ width: 'auto' }}
-        />
-      </div>
+      {!hideHeader && (
+        <div className="page-header">
+          <h1 className="page-title">Smart Budgets</h1>
+          <input 
+            type="month" 
+            className="form-input" 
+            value={currentMonth}
+            onChange={(e) => setCurrentMonth(e.target.value)}
+            style={{ width: 'auto' }}
+          />
+        </div>
+      )}
+      
+      {/* If header is hidden, we still need the month selector */}
+      {hideHeader && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+          <input 
+            type="month" 
+            className="form-input" 
+            value={currentMonth}
+            onChange={(e) => setCurrentMonth(e.target.value)}
+            style={{ width: 'auto' }}
+          />
+        </div>
+      )}
 
       {error && (
         <div style={{ background: 'var(--error)', color: 'white', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

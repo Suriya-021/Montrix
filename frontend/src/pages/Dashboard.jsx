@@ -28,6 +28,8 @@ function Dashboard() {
   const [recentTransactions, setRecentTransactions] = useState([]);
   const [upcomingBills, setUpcomingBills] = useState([]);
   const [activeGoals, setActiveGoals] = useState([]);
+  const [totalIncome, setTotalIncome] = useState(0);
+  const [netBalance, setNetBalance] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -39,15 +41,20 @@ function Dashboard() {
     try {
       setIsLoading(true);
       
-      // Fetch stats, all expenses, subscriptions, and goals simultaneously
-      const [statsData, allExpenses, subsData, goalsData] = await Promise.all([
+      // Fetch stats, all expenses, subscriptions, goals, and income simultaneously
+      const [statsData, allExpenses, subsData, goalsData, incomeData] = await Promise.all([
         expenseService.getStats(),
         expenseService.getAll(),
-        subscriptionService.getAll().catch(() => []), // Catch error if token expired gracefully for widget
-        goalService.getAll().catch(() => []) // Catch error gracefully
+        subscriptionService.getAll().catch(() => []), 
+        goalService.getAll().catch(() => []),
+        import('../services/incomeService').then(m => m.incomeService.getAll()).catch(() => [])
       ]);
       
       setStats(statsData);
+      
+      const totalInc = incomeData.reduce((sum, item) => sum + item.amount, 0);
+      setTotalIncome(totalInc);
+      setNetBalance(totalInc - (statsData?.total_spent || 0));
       
       // Sort newest first and get top 5
       const sorted = allExpenses.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -140,17 +147,19 @@ function Dashboard() {
 
       {/* Top Summary Cards */}
       <div className="stat-grid">
-        <div className="stat-card">
-          <div className="stat-card__label">Total Spent</div>
+        <div className="stat-card" style={{ borderLeft: '4px solid var(--accent-primary)' }}>
+          <div className="stat-card__label">Total Income</div>
+          <div className="stat-card__value" style={{ color: 'var(--accent-primary)' }}>{formatCurrency(totalIncome)}</div>
+        </div>
+        <div className="stat-card" style={{ borderLeft: '4px solid var(--error)' }}>
+          <div className="stat-card__label">Total Expenses</div>
           <div className="stat-card__value">{formatCurrency(stats?.total_spent || 0)}</div>
         </div>
-        <div className="stat-card">
-          <div className="stat-card__label">This Month</div>
-          <div className="stat-card__value">{formatCurrency(stats?.this_month_spent || 0)}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-card__label">Transactions</div>
-          <div className="stat-card__value">{stats?.transactions_count || 0}</div>
+        <div className="stat-card" style={{ borderLeft: `4px solid ${netBalance >= 0 ? 'var(--accent-primary)' : 'var(--error)'}` }}>
+          <div className="stat-card__label">Net Balance</div>
+          <div className="stat-card__value" style={{ color: netBalance >= 0 ? 'var(--text-primary)' : 'var(--error)' }}>
+            {formatCurrency(netBalance)}
+          </div>
         </div>
       </div>
 

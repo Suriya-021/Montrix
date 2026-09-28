@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { goalService } from '../services/goalService';
 import { Loader2, AlertCircle, Trophy, Plus, Trash2, TrendingUp } from 'lucide-react';
 
-function GoalsPage() {
+function GoalsPage({ hideHeader = false }) {
   const [goals, setGoals] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -115,9 +115,11 @@ function GoalsPage() {
 
   return (
     <div>
-      <div className="page-header">
-        <h1 className="page-title">Savings Goals</h1>
-      </div>
+      {!hideHeader && (
+        <div className="page-header">
+          <h1 className="page-title">Savings Goals</h1>
+        </div>
+      )}
 
       {error && (
         <div style={{ background: 'var(--error)', color: 'white', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

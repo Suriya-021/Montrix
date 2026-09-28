@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Receipt, BarChart3, Settings, Plus, LogOut, Target, Calendar, Trophy } from 'lucide-react';
+import { LayoutDashboard, Receipt, BarChart3, Settings, Plus, LogOut, Target, Calendar, Trophy, Wallet } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import './Sidebar.css';
 
@@ -39,19 +39,19 @@ function Sidebar({ onAddExpense }) {
             <span className="nav-text">Expenses</span>
           </NavLink>
           
-          <NavLink to="/budgets" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
+          <NavLink to="/income" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
+            <Wallet className="nav-icon" />
+            <span className="nav-text">Income</span>
+          </NavLink>
+          
+          <NavLink to="/planning" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
             <Target className="nav-icon" />
-            <span className="nav-text">Budgets</span>
+            <span className="nav-text">Planning</span>
           </NavLink>
           
           <NavLink to="/subscriptions" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
             <Calendar className="nav-icon" />
             <span className="nav-text">Subscriptions</span>
-          </NavLink>
-          
-          <NavLink to="/goals" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
-            <Trophy className="nav-icon" />
-            <span className="nav-text">Goals</span>
           </NavLink>
           
           <NavLink to="/analytics" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>

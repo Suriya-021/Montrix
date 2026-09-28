@@ -92,6 +92,19 @@ def init_db():
         )
     ''')
     
+    # SQL command to create our income table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS income (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            source TEXT NOT NULL,
+            amount REAL NOT NULL,
+            date TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+    ''')
+    
     # Commit saves our changes to the file
     conn.commit()
     # Always close the connection when done!
