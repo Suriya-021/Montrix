@@ -18,6 +18,7 @@ const Planning = lazy(() => import('./pages/PlanningPage'));
 const Subscriptions = lazy(() => import('./pages/SubscriptionsPage'));
 const Income = lazy(() => import('./pages/IncomePage'));
 const Analytics = lazy(() => import('./pages/AnalyticsPage'));
+const SettingsPage = lazy(() => import('./pages/Settings/SettingsPage'));
 
 // V2 Protected Layout with TopNavbar
 const ProtectedLayout = ({ handleAddExpense, toast, setToast, showModal, setShowModal, handleSaveExpense }) => {
@@ -48,7 +49,7 @@ const ProtectedLayout = ({ handleAddExpense, toast, setToast, showModal, setShow
               <Route path="/planning" element={<Planning />} />
               <Route path="/subscriptions" element={<Subscriptions />} />
               <Route path="/analytics" element={<Analytics />} />
-              <Route path="/settings" element={<div className="empty-state"><h3 className="empty-state__title">Settings</h3><p className="empty-state__text">Coming soon...</p></div>} />
+              <Route path="/settings" element={<SettingsPage />} />
               <Route path="*" element={
                 <div className="empty-state">
                   <h3 className="empty-state__title">404 - Page Not Found</h3>

@@ -2,7 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from app.db import init_db
+from app.database_orm import engine, Base
+
 from app.routes.expenses import router as expenses_router
 from app.routes.budgets import router as budgets_router
 from app.routes.subscriptions import router as subscriptions_router
@@ -16,7 +17,7 @@ from app.routes import auth
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("Initializing database...")
-    init_db()  # Creates the tables if they don't exist
+    Base.metadata.create_all(bind=engine)
     print("Database ready!")
     yield
     print("Shutting down server...")

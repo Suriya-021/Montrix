@@ -63,14 +63,16 @@ def login_user(login_data: UserLogin):
             headers={"WWW-Authenticate": "Bearer"},
         )
         
-    access_token = create_access_token(data={"sub": str(user['id'])})
+    access_token = create_access_token(
+        data={"sub": str(user['id']), "name": user['name'], "email": user['email']}
+    )
     return {"access_token": access_token, "token_type": "bearer"}
 
-async def get_current_user(token: str = Depends(oauth2_scheme)):
+def get_current_user(token: str = Depends(oauth2_scheme)):
     """
     Middleware function.
     FastAPI runs this whenever a route requires authentication.
-    It extracts the token, decodes it, and returns the user.
+    It extracts the token, decodes it, and returns the user without hitting the DB.
     """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -84,12 +86,12 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         user_id: str = payload.get("sub")
         if user_id is None:
             raise credentials_exception
+            
+        # Return user dict directly from JWT payload to prevent DB bottleneck
+        return {
+            "id": int(user_id),
+            "name": payload.get("name", "User"),
+            "email": payload.get("email", "")
+        }
     except JWTError:
         raise credentials_exception
-        
-    # Get the user from DB
-    user = user_db.get_user_by_id(int(user_id))
-    if user is None:
-        raise credentials_exception
-        
-    return user

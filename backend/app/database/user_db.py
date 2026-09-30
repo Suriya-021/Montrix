@@ -1,40 +1,42 @@
-import sqlite3
-from app.db import get_db_connection
-from fastapi import HTTPException
 
-def create_user(name: str, email: str, password_hash: str):
-    """Inserts a new user into the database."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
+from sqlalchemy.orm import Session
+from app.models.all_models import User
+from app.database_orm import SessionLocal
+
+def get_db():
+    db = SessionLocal()
     try:
-        cursor.execute(
-            "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
-            (name, email, password_hash)
-        )
-        conn.commit()
-        user_id = cursor.lastrowid
-        return get_user_by_id(user_id)
-    except sqlite3.IntegrityError:
-        # IntegrityError occurs if the UNIQUE constraint on email is violated
-        conn.close()
-        raise HTTPException(status_code=400, detail="Email already registered")
+        yield db
     finally:
-        conn.close()
+        db.close()
 
 def get_user_by_email(email: str):
-    """Finds a user by their email address."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
-    user = cursor.fetchone()
-    conn.close()
-    return dict(user) if user else None
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.email == email).first()
+        if user:
+            return {"id": user.id, "name": user.name, "email": user.email, "password_hash": user.password_hash, "created_at": str(user.created_at)}
+        return None
+    finally:
+        db.close()
 
 def get_user_by_id(user_id: int):
-    """Finds a user by their ID, excluding the password hash for safety."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, name, email, created_at FROM users WHERE id = ?", (user_id,))
-    user = cursor.fetchone()
-    conn.close()
-    return dict(user) if user else None
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if user:
+            return {"id": user.id, "name": user.name, "email": user.email, "password_hash": user.password_hash, "created_at": str(user.created_at)}
+        return None
+    finally:
+        db.close()
+
+def create_user(name: str, email: str, password_hash: str):
+    db = SessionLocal()
+    try:
+        new_user = User(name=name, email=email, password_hash=password_hash)
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+        return {"id": new_user.id, "name": new_user.name, "email": new_user.email, "password_hash": new_user.password_hash, "created_at": str(new_user.created_at)}
+    finally:
+        db.close()

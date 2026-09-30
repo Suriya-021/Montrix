@@ -1,90 +1,63 @@
-from typing import List, Optional
-from ..db import get_db_connection
-from ..schemas.subscription import SubscriptionCreate, SubscriptionUpdate
 
-def create_subscription(user_id: int, sub: SubscriptionCreate) -> int:
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute(
-        "INSERT INTO subscriptions (user_id, title, amount, frequency, next_due_date) VALUES (?, ?, ?, ?, ?)",
-        (user_id, sub.title, sub.amount, sub.frequency, sub.next_due_date)
-    )
-    
-    sub_id = cursor.lastrowid
-    conn.commit()
-    conn.close()
-    
-    return sub_id
+from app.models.all_models import Subscription
+from app.database_orm import SessionLocal
 
-def get_subscriptions(user_id: int) -> List[dict]:
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    # Order by next_due_date so the soonest bills appear first!
-    cursor.execute("SELECT * FROM subscriptions WHERE user_id = ? ORDER BY next_due_date ASC", (user_id,))
-        
-    rows = cursor.fetchall()
-    conn.close()
-    
-    return [dict(row) for row in rows]
+def get_subscriptions(user_id: int):
+    db = SessionLocal()
+    try:
+        subs = db.query(Subscription).filter(Subscription.user_id == user_id).order_by(Subscription.next_due_date.asc()).all()
+        return [{"id": s.id, "user_id": s.user_id, "title": s.title, "amount": s.amount, "frequency": s.frequency, "next_due_date": s.next_due_date, "created_at": str(s.id)} for s in subs]
+    finally:
+        db.close()
 
-def get_subscription_by_id(user_id: int, sub_id: int) -> Optional[dict]:
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute("SELECT * FROM subscriptions WHERE id = ? AND user_id = ?", (sub_id, user_id))
-    row = cursor.fetchone()
-    
-    conn.close()
-    
-    if row:
-        return dict(row)
-    return None
+def get_subscription_by_id(user_id: int, sub_id: int):
+    db = SessionLocal()
+    try:
+        s = db.query(Subscription).filter(Subscription.id == sub_id, Subscription.user_id == user_id).first()
+        if s:
+            return {"id": s.id, "user_id": s.user_id, "title": s.title, "amount": s.amount, "frequency": s.frequency, "next_due_date": s.next_due_date, "created_at": str(s.id)}
+        return None
+    finally:
+        db.close()
 
-def update_subscription(user_id: int, sub_id: int, sub: SubscriptionUpdate) -> bool:
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    # We only update the fields that are provided
-    update_fields = []
-    params = []
-    
-    if sub.title is not None:
-        update_fields.append("title = ?")
-        params.append(sub.title)
-    if sub.amount is not None:
-        update_fields.append("amount = ?")
-        params.append(sub.amount)
-    if sub.frequency is not None:
-        update_fields.append("frequency = ?")
-        params.append(sub.frequency)
-    if sub.next_due_date is not None:
-        update_fields.append("next_due_date = ?")
-        params.append(sub.next_due_date)
-        
-    if not update_fields:
+def create_subscription(user_id: int, sub_obj):
+    db = SessionLocal()
+    try:
+        new_sub = Subscription(user_id=user_id, title=sub_obj.title, amount=sub_obj.amount, frequency=sub_obj.frequency, next_due_date=sub_obj.next_due_date)
+        db.add(new_sub)
+        db.commit()
+        db.refresh(new_sub)
+        return new_sub.id
+    finally:
+        db.close()
+
+def update_subscription(user_id: int, sub_id: int, sub_obj):
+    db = SessionLocal()
+    try:
+        sub = db.query(Subscription).filter(Subscription.id == sub_id, Subscription.user_id == user_id).first()
+        if sub:
+            if sub_obj.title is not None:
+                sub.title = sub_obj.title
+            if sub_obj.amount is not None:
+                sub.amount = sub_obj.amount
+            if sub_obj.frequency is not None:
+                sub.frequency = sub_obj.frequency
+            if sub_obj.next_due_date is not None:
+                sub.next_due_date = sub_obj.next_due_date
+            db.commit()
+            return True
         return False
-        
-    query = f"UPDATE subscriptions SET {', '.join(update_fields)} WHERE id = ? AND user_id = ?"
-    params.extend([sub_id, user_id])
-    
-    cursor.execute(query, tuple(params))
-    
-    rows_affected = cursor.rowcount
-    conn.commit()
-    conn.close()
-    
-    return rows_affected > 0
+    finally:
+        db.close()
 
-def delete_subscription(user_id: int, sub_id: int) -> bool:
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute("DELETE FROM subscriptions WHERE id = ? AND user_id = ?", (sub_id, user_id))
-    
-    rows_affected = cursor.rowcount
-    conn.commit()
-    conn.close()
-    
-    return rows_affected > 0
+def delete_subscription(user_id: int, sub_id: int):
+    db = SessionLocal()
+    try:
+        sub = db.query(Subscription).filter(Subscription.id == sub_id, Subscription.user_id == user_id).first()
+        if sub:
+            db.delete(sub)
+            db.commit()
+            return True
+        return False
+    finally:
+        db.close()

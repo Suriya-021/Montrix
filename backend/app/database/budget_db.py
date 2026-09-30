@@ -1,73 +1,58 @@
-from typing import List, Optional
-from ..db import get_db_connection
-from ..schemas.budget import BudgetCreate, BudgetUpdate
 
-def create_budget(user_id: int, budget: BudgetCreate) -> int:
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    # We use INSERT OR REPLACE so if a budget for this category & month already exists, it updates it!
-    cursor.execute(
-        "INSERT OR REPLACE INTO budgets (user_id, category, limit_amount, month) VALUES (?, ?, ?, ?)",
-        (user_id, budget.category, budget.limit_amount, budget.month)
-    )
-    
-    budget_id = cursor.lastrowid
-    conn.commit()
-    conn.close()
-    
-    return budget_id
+from app.models.all_models import Budget
+from app.database_orm import SessionLocal
 
-def get_budgets(user_id: int, month: Optional[str] = None) -> List[dict]:
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    if month:
-        cursor.execute("SELECT * FROM budgets WHERE user_id = ? AND month = ?", (user_id, month))
-    else:
-        cursor.execute("SELECT * FROM budgets WHERE user_id = ?", (user_id,))
-        
-    rows = cursor.fetchall()
-    conn.close()
-    
-    return [dict(row) for row in rows]
+def get_budgets(user_id: int):
+    db = SessionLocal()
+    try:
+        budgets = db.query(Budget).filter(Budget.user_id == user_id).all()
+        return [{"id": b.id, "user_id": b.user_id, "category": b.category, "limit_amount": b.limit_amount, "month": b.month, "created_at": str(b.id)} for b in budgets]
+    finally:
+        db.close()
 
-def get_budget_by_id(user_id: int, budget_id: int) -> Optional[dict]:
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute("SELECT * FROM budgets WHERE id = ? AND user_id = ?", (budget_id, user_id))
-    row = cursor.fetchone()
-    
-    conn.close()
-    
-    if row:
-        return dict(row)
-    return None
+def get_budget_by_id(user_id: int, budget_id: int):
+    db = SessionLocal()
+    try:
+        b = db.query(Budget).filter(Budget.id == budget_id, Budget.user_id == user_id).first()
+        if b:
+            return {"id": b.id, "user_id": b.user_id, "category": b.category, "limit_amount": b.limit_amount, "month": b.month, "created_at": str(b.id)}
+        return None
+    finally:
+        db.close()
 
-def update_budget(user_id: int, budget_id: int, budget: BudgetUpdate) -> bool:
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute(
-        "UPDATE budgets SET limit_amount = ? WHERE id = ? AND user_id = ?",
-        (budget.limit_amount, budget_id, user_id)
-    )
-    
-    rows_affected = cursor.rowcount
-    conn.commit()
-    conn.close()
-    
-    return rows_affected > 0
+def create_budget(user_id: int, budget_obj):
+    db = SessionLocal()
+    try:
+        new_budget = Budget(user_id=user_id, category=budget_obj.category, limit_amount=budget_obj.limit_amount, month=budget_obj.month)
+        db.add(new_budget)
+        db.commit()
+        db.refresh(new_budget)
+        return new_budget.id
+    finally:
+        db.close()
 
-def delete_budget(user_id: int, budget_id: int) -> bool:
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute("DELETE FROM budgets WHERE id = ? AND user_id = ?", (budget_id, user_id))
-    
-    rows_affected = cursor.rowcount
-    conn.commit()
-    conn.close()
-    
-    return rows_affected > 0
+def update_budget(user_id: int, budget_id: int, budget_obj):
+    db = SessionLocal()
+    try:
+        budget = db.query(Budget).filter(Budget.id == budget_id, Budget.user_id == user_id).first()
+        if budget:
+            if budget_obj.category is not None: budget.category = budget_obj.category
+            if budget_obj.limit_amount is not None: budget.limit_amount = budget_obj.limit_amount
+            if budget_obj.month is not None: budget.month = budget_obj.month
+            db.commit()
+            return True
+        return False
+    finally:
+        db.close()
+
+def delete_budget(user_id: int, budget_id: int):
+    db = SessionLocal()
+    try:
+        budget = db.query(Budget).filter(Budget.id == budget_id, Budget.user_id == user_id).first()
+        if budget:
+            db.delete(budget)
+            db.commit()
+            return True
+        return False
+    finally:
+        db.close()
