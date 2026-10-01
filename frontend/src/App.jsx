@@ -85,7 +85,8 @@ function App() {
       await expenseService.create(expenseData);
       setToast({ show: true, message: 'Expense added successfully!', type: 'success' });
       setShowModal(false);
-      // Trigger a window event or context update to refetch data if necessary
+      // Trigger a window event so pages can refetch
+      window.dispatchEvent(new Event('expenseDataChanged'));
     } catch (error) {
       setToast({ show: true, message: error.message || 'Error adding expense', type: 'error' });
     }

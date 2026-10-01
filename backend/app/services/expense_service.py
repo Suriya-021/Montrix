@@ -1,9 +1,14 @@
+
 from fastapi import HTTPException
 from app.database import expense_db
 from app.schemas.expense import ExpenseCreate
 
 def create_expense(expense: ExpenseCreate, user_id: int):
-    return expense_db.create_expense(user_id, expense.amount, expense.category, expense.description, str(expense.date))
+    expense_id = expense_db.create_expense(user_id, expense.amount, expense.category, expense.description, str(expense.date))
+    created = expense_db.get_expense_by_id(expense_id, user_id)
+    if not created:
+        raise HTTPException(status_code=500, detail="Failed to create expense")
+    return created
 
 def get_all_expenses(user_id: int):
     return expense_db.get_all_expenses(user_id)
@@ -18,7 +23,8 @@ def update_expense(expense_id: int, expense: ExpenseCreate, user_id: int):
     updated = expense_db.update_expense(expense_id, user_id, expense.amount, expense.category, expense.description, str(expense.date))
     if not updated:
         raise HTTPException(status_code=404, detail="Expense not found")
-    return updated
+    
+    return expense_db.get_expense_by_id(expense_id, user_id)
 
 def delete_expense(expense_id: int, user_id: int):
     success = expense_db.delete_expense(expense_id, user_id)

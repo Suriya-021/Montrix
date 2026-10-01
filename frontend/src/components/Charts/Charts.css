@@ -3,7 +3,7 @@
 .chart-card {
   padding: var(--card-padding);
   border-radius: var(--card-radius);
-  background: var(--card-bg);
+  background: rgba(10, 10, 18, 0.85);
   border: 1px solid var(--card-border);
   display: flex;
   flex-direction: column;
@@ -40,7 +40,7 @@
 
 /* Tooltip Styles */
 .chart-tooltip {
-  background: #111827; /* Dark glass theme */
+  background: rgba(8, 8, 15, 0.95); /* Pure black glass */
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 12px;
   padding: var(--space-3) var(--space-4);

@@ -44,12 +44,12 @@ const CashFlowChart = ({ data }) => {
           >
             <defs>
               <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#06D6A0" stopOpacity={0.4}/>
-                <stop offset="95%" stopColor="#06D6A0" stopOpacity={0}/>
+                <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.4}/>
+                <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0}/>
               </linearGradient>
               <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#EF4444" stopOpacity={0.4}/>
-                <stop offset="95%" stopColor="#EF4444" stopOpacity={0}/>
+                <stop offset="5%" stopColor="#22D3EE" stopOpacity={0.4}/>
+                <stop offset="95%" stopColor="#22D3EE" stopOpacity={0}/>
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.06)" />
@@ -64,7 +64,7 @@ const CashFlowChart = ({ data }) => {
               axisLine={false} 
               tickLine={false} 
               tick={{ fill: 'var(--text-muted)', fontSize: 12 }}
-              tickFormatter={(value) => `$${value/1000}k`}
+              tickFormatter={(value) => value >= 1000 ? `${(value/1000).toFixed(0)}k` : value}
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: 12, color: 'var(--text-secondary)' }}/>
@@ -72,7 +72,7 @@ const CashFlowChart = ({ data }) => {
               type="monotone" 
               dataKey="income" 
               name="Income"
-              stroke="#06D6A0" 
+              stroke="#8B5CF6" 
               strokeWidth={2}
               fillOpacity={1} 
               fill="url(#colorIncome)" 
@@ -81,7 +81,7 @@ const CashFlowChart = ({ data }) => {
               type="monotone" 
               dataKey="expenses" 
               name="Expenses"
-              stroke="#EF4444" 
+              stroke="#22D3EE" 
               strokeWidth={2}
               fillOpacity={1} 
               fill="url(#colorExpenses)" 

@@ -2,11 +2,22 @@
 from app.models.all_models import Subscription
 from app.database_orm import SessionLocal
 
+def _sub_to_dict(s):
+    return {
+        "id": s.id,
+        "user_id": s.user_id,
+        "title": s.title,
+        "amount": s.amount,
+        "frequency": s.frequency,
+        "next_due_date": s.next_due_date,
+        "created_at": str(s.created_at) if getattr(s, 'created_at', None) else str(s.id)
+    }
+
 def get_subscriptions(user_id: int):
     db = SessionLocal()
     try:
         subs = db.query(Subscription).filter(Subscription.user_id == user_id).order_by(Subscription.next_due_date.asc()).all()
-        return [{"id": s.id, "user_id": s.user_id, "title": s.title, "amount": s.amount, "frequency": s.frequency, "next_due_date": s.next_due_date, "created_at": str(s.id)} for s in subs]
+        return [_sub_to_dict(s) for s in subs]
     finally:
         db.close()
 
@@ -15,7 +26,7 @@ def get_subscription_by_id(user_id: int, sub_id: int):
     try:
         s = db.query(Subscription).filter(Subscription.id == sub_id, Subscription.user_id == user_id).first()
         if s:
-            return {"id": s.id, "user_id": s.user_id, "title": s.title, "amount": s.amount, "frequency": s.frequency, "next_due_date": s.next_due_date, "created_at": str(s.id)}
+            return _sub_to_dict(s)
         return None
     finally:
         db.close()

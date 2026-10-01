@@ -1,6 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { expenseService } from '../../../services/expenseService';
 
 export default function DataPrivacySettings() {
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
+    try {
+      setExporting(true);
+      await expenseService.exportCSV();
+    } catch (error) {
+      alert("Failed to export data. Please try again.");
+      console.error(error);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
       {/* Standard Settings Card */}
@@ -16,8 +31,13 @@ export default function DataPrivacySettings() {
             <div className="setting-description">Download your Montrix financial data in CSV format.</div>
           </div>
           <div className="setting-action">
-            <button className="btn" style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}>
-              Export CSV
+            <button 
+              className="btn" 
+              style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
+              onClick={handleExport}
+              disabled={exporting}
+            >
+              {exporting ? 'Exporting...' : 'Export CSV'}
             </button>
           </div>
         </div>
@@ -28,7 +48,11 @@ export default function DataPrivacySettings() {
             <div className="setting-description">Generate a downloadable PDF report of your financial activity.</div>
           </div>
           <div className="setting-action">
-            <button className="btn" style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}>
+            <button 
+              className="btn" 
+              style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
+              onClick={() => alert("PDF report generation coming soon.")}
+            >
               Generate Report
             </button>
           </div>

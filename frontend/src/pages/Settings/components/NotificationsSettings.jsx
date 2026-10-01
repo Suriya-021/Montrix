@@ -1,12 +1,16 @@
-import React, { useState } from 'react';
+import React from 'react';
 import Toggle from './Toggle';
+import { useSettings } from '../../../context/SettingsContext';
 
 export default function NotificationsSettings() {
-  const [budgetAlerts, setBudgetAlerts] = useState(true);
-  const [budgetExceeded, setBudgetExceeded] = useState(true);
-  const [upcomingBills, setUpcomingBills] = useState(true);
-  const [savingsGoals, setSavingsGoals] = useState(true);
-  const [aiInsights, setAiInsights] = useState(false);
+  const { notifications, updateSetting } = useSettings();
+
+  const handleToggle = (key, value) => {
+    updateSetting('notifications', {
+      ...notifications,
+      [key]: value
+    });
+  };
 
   return (
     <div className="settings-card glass-card fade-in">
@@ -21,7 +25,7 @@ export default function NotificationsSettings() {
           <div className="setting-description">Notify when spending reaches 80% of a budget.</div>
         </div>
         <div className="setting-action">
-          <Toggle checked={budgetAlerts} onChange={setBudgetAlerts} />
+          <Toggle checked={notifications?.budgetAlerts} onChange={(v) => handleToggle('budgetAlerts', v)} />
         </div>
       </div>
 
@@ -31,7 +35,7 @@ export default function NotificationsSettings() {
           <div className="setting-description">Notify when a category exceeds its budget.</div>
         </div>
         <div className="setting-action">
-          <Toggle checked={budgetExceeded} onChange={setBudgetExceeded} />
+          <Toggle checked={notifications?.budgetExceeded} onChange={(v) => handleToggle('budgetExceeded', v)} />
         </div>
       </div>
 
@@ -41,7 +45,7 @@ export default function NotificationsSettings() {
           <div className="setting-description">Remind me about upcoming recurring payments.</div>
         </div>
         <div className="setting-action">
-          <Toggle checked={upcomingBills} onChange={setUpcomingBills} />
+          <Toggle checked={notifications?.upcomingBills} onChange={(v) => handleToggle('upcomingBills', v)} />
         </div>
       </div>
 
@@ -51,7 +55,7 @@ export default function NotificationsSettings() {
           <div className="setting-description">Notify me when I reach a savings milestone.</div>
         </div>
         <div className="setting-action">
-          <Toggle checked={savingsGoals} onChange={setSavingsGoals} />
+          <Toggle checked={notifications?.savingsGoals} onChange={(v) => handleToggle('savingsGoals', v)} />
         </div>
       </div>
 
@@ -61,7 +65,7 @@ export default function NotificationsSettings() {
           <div className="setting-description">Notify me when a new spending insight is available.</div>
         </div>
         <div className="setting-action">
-          <Toggle checked={aiInsights} onChange={setAiInsights} />
+          <Toggle checked={notifications?.aiInsights} onChange={(v) => handleToggle('aiInsights', v)} />
         </div>
       </div>
     </div>

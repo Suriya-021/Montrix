@@ -28,10 +28,6 @@ const CATEGORY_COLORS = {
   Other: '#64748B'
 };
 
-/**
- * V2 Dashboard
- * Premium overview page with KPI cards, charts, and widgets.
- */
 function Dashboard() {
   const { formatCurrency } = useCurrency();
   const [stats, setStats] = useState(null);
@@ -41,17 +37,22 @@ function Dashboard() {
   const [totalIncome, setTotalIncome] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [allExpenses, setAllExpenses] = useState([]);
-
   const [cashFlowData, setCashFlowData] = useState([]);
   
   useEffect(() => {
     loadDashboardData();
+    
+    const handleDataChange = () => {
+      loadDashboardData();
+    };
+    
+    window.addEventListener('expenseDataChanged', handleDataChange);
+    return () => window.removeEventListener('expenseDataChanged', handleDataChange);
   }, []);
 
   const loadDashboardData = async () => {
     setIsLoading(true);
     try {
-      // Fetch all data in parallel — each has its own catch to prevent cascade failures
       const [statsData, expensesData, incomeData, billsData, goalsData, cfData] = await Promise.all([
         expenseService.getStats().catch(() => null),
         expenseService.getAll().catch(() => []),
@@ -71,7 +72,6 @@ function Dashboard() {
       setTotalIncome(incomeSum);
 
       const billsArr = Array.isArray(billsData) ? billsData : [];
-      // Subscriptions have next_due_date in DB.
       const activeB = billsArr.sort((a, b) => {
         const dateA = a.next_due_date ? new Date(a.next_due_date) : new Date();
         const dateB = b.next_due_date ? new Date(b.next_due_date) : new Date();
@@ -89,12 +89,10 @@ function Dashboard() {
     }
   };
 
-  // Calculate derived data
   const totalExpenses = stats?.total_spent || 0;
   const netBalance = totalIncome - totalExpenses;
   const savings = netBalance > 0 ? netBalance : 0;
 
-  // Category breakdown for donut chart
   const categoryData = (stats && Array.isArray(stats.category_breakdown)) 
     ? stats.category_breakdown.map(item => {
         const total = stats.total_spent || 1;
@@ -107,7 +105,6 @@ function Dashboard() {
       }).sort((a, b) => b.value - a.value) 
     : [];
 
-  // Generate sparkline data (7 random points around a base value)
   const generateSparkline = (baseValue) => {
     if (!baseValue || baseValue === 0) {
       return Array.from({ length: 7 }, () => ({ value: 0 }));
@@ -120,14 +117,24 @@ function Dashboard() {
   if (isLoading) {
     return (
       <div className="empty-state" style={{ height: '60vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-        <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', color: 'var(--accent-blue)' }} />
-        <p style={{ marginTop: 16 }}>Loading your dashboard...</p>
+        <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', color: '#8B5CF6' }} />
+        <p style={{ marginTop: 16, color: 'var(--text-muted)' }}>Loading your dashboard...</p>
       </div>
     );
   }
 
   return (
     <div>
+      {/* Welcome Header */}
+      <div className="page-header" style={{ marginBottom: 'var(--space-6)' }}>
+        <div>
+          <h1 className="page-title" style={{ fontSize: '1.75rem' }}>Overview</h1>
+          <p style={{ color: 'var(--text-muted)', marginTop: 'var(--space-1)', fontSize: '0.9rem' }}>
+            Here's what's happening with your finances today.
+          </p>
+        </div>
+      </div>
+
       {/* KPI Cards Row */}
       <div className="stat-grid">
         <StatCard 
@@ -136,7 +143,7 @@ function Dashboard() {
           value={formatCurrency(netBalance)}
           change="+14.50%"
           changeType="positive"
-          color="#06D6A0"
+          color="#8B5CF6"
           sparklineData={generateSparkline(netBalance)}
         />
         <StatCard 
@@ -145,7 +152,7 @@ function Dashboard() {
           value={formatCurrency(totalIncome)}
           change="+25.00%"
           changeType="positive"
-          color="#3B82F6"
+          color="#22D3EE"
           sparklineData={generateSparkline(totalIncome)}
         />
         <StatCard 
@@ -154,7 +161,7 @@ function Dashboard() {
           value={formatCurrency(totalExpenses)}
           change="-12.20%"
           changeType="negative"
-          color="#EF4444"
+          color="#EC4899"
           sparklineData={generateSparkline(totalExpenses)}
         />
         <StatCard 
@@ -168,31 +175,25 @@ function Dashboard() {
         />
       </div>
 
-      {/* Main Dashboard Layout (Left / Right columns) */}
+      {/* Main Dashboard Layout */}
       <div className="dashboard-body">
-        {/* Left Column */}
         <div className="dashboard-column-left">
           <CashFlowChart data={cashFlowData} />
-          
           <TransactionsWidget 
             transactions={recentTransactions} 
             formatCurrency={formatCurrency} 
           />
         </div>
-
-        {/* Right Column */}
         <div className="dashboard-column-right">
           <CategoryDonut 
             data={categoryData} 
             totalLabel="Total expenses per month"
             totalValue={formatCurrency(totalExpenses)}
           />
-          
           <UpcomingBillsWidget 
             bills={upcomingBills} 
             formatCurrency={formatCurrency} 
           />
-          
           <SavingsGoalsWidget 
             goals={activeGoals} 
             formatCurrency={formatCurrency} 

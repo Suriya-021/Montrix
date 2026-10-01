@@ -2,11 +2,22 @@
 from app.models.all_models import Goal
 from app.database_orm import SessionLocal
 
+def _goal_to_dict(g):
+    return {
+        "id": g.id,
+        "user_id": g.user_id,
+        "title": g.title,
+        "target_amount": g.target_amount,
+        "current_amount": g.current_amount,
+        "target_date": g.target_date,
+        "created_at": str(g.created_at) if getattr(g, 'created_at', None) else str(g.id)
+    }
+
 def get_goals(user_id: int):
     db = SessionLocal()
     try:
         goals = db.query(Goal).filter(Goal.user_id == user_id).all()
-        return [{"id": g.id, "user_id": g.user_id, "title": g.title, "target_amount": g.target_amount, "current_amount": g.current_amount, "target_date": g.target_date, "created_at": str(g.id)} for g in goals]
+        return [_goal_to_dict(g) for g in goals]
     finally:
         db.close()
 
@@ -15,7 +26,7 @@ def get_goal_by_id(user_id: int, goal_id: int):
     try:
         g = db.query(Goal).filter(Goal.id == goal_id, Goal.user_id == user_id).first()
         if g:
-             return {"id": g.id, "user_id": g.user_id, "title": g.title, "target_amount": g.target_amount, "current_amount": g.current_amount, "target_date": g.target_date, "created_at": str(g.id)}
+             return _goal_to_dict(g)
         return None
     finally:
         db.close()

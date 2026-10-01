@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import Toggle from './Toggle';
+import { useSettings } from '../../../context/SettingsContext';
 
 export default function AppearanceSettings() {
-  const [theme, setTheme] = useState('dark');
-  const [compactMode, setCompactMode] = useState(false);
-  const [animations, setAnimations] = useState(true);
+  const { theme, compactMode, animations, updateSetting } = useSettings();
 
   return (
     <div className="settings-card glass-card fade-in">
@@ -22,7 +21,7 @@ export default function AppearanceSettings() {
           <select 
             className="form-input" 
             value={theme} 
-            onChange={(e) => setTheme(e.target.value)}
+            onChange={(e) => updateSetting('theme', e.target.value)}
             style={{ width: '120px' }}
           >
             <option value="dark">Dark</option>
@@ -38,7 +37,7 @@ export default function AppearanceSettings() {
           <div className="setting-description">Reduce spacing to fit more content on screen.</div>
         </div>
         <div className="setting-action">
-          <Toggle checked={compactMode} onChange={setCompactMode} />
+          <Toggle checked={compactMode} onChange={(v) => updateSetting('compactMode', v)} />
         </div>
       </div>
 
@@ -48,7 +47,7 @@ export default function AppearanceSettings() {
           <div className="setting-description">Enable smooth transitions and UI animations.</div>
         </div>
         <div className="setting-action">
-          <Toggle checked={animations} onChange={setAnimations} />
+          <Toggle checked={animations} onChange={(v) => updateSetting('animations', v)} />
         </div>
       </div>
     </div>

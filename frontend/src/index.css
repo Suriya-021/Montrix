@@ -9,39 +9,39 @@
 /* === DESIGN TOKENS === */
 :root {
   /* Foundation */
-  --bg-primary: #0B0F19;
-  --bg-secondary: #111827;
-  --bg-elevated: #1E293B;
+  --bg-primary: #050507;
+  --bg-secondary: #0A0A0F;
+  --bg-elevated: #12121A;
 
   /* V2 Background Gradient */
   --bg-gradient: 
-    radial-gradient(ellipse at 20% 0%, rgba(99,102,241,0.06), transparent 50%),
-    radial-gradient(ellipse at 80% 100%, rgba(168,85,247,0.04), transparent 50%),
-    #0B0F19;
+    radial-gradient(ellipse at 20% 0%, rgba(139,92,246,0.08), transparent 50%),
+    radial-gradient(ellipse at 80% 100%, rgba(168,85,247,0.05), transparent 50%),
+    #050507;
 
   /* Glass (V2: softer, subtler) */
-  --glass-bg: rgba(30, 41, 59, 0.4);
-  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-bg: rgba(15, 15, 25, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.06);
   --glass-blur: 12px;
 
   /* V2 Card System */
-  --card-bg: rgba(17, 24, 39, 0.7);
-  --card-border: rgba(255, 255, 255, 0.06);
+  --card-bg: rgba(12, 12, 20, 0.8);
+  --card-border: rgba(255, 255, 255, 0.05);
   --card-radius: 20px;
   --card-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
   --card-hover-shadow: 0 8px 40px rgba(0, 0, 0, 0.3);
   --card-padding: 24px;
 
   /* V2 Accent Palette */
-  --accent-primary: #06D6A0;
-  --accent-glow: rgba(6, 214, 160, 0.15);
-  --accent-hover: #05F2B0;
+  --accent-primary: #8B5CF6;
+  --accent-glow: rgba(139, 92, 246, 0.15);
+  --accent-hover: #A78BFA;
   --accent-secondary: #2DD4BF;
   --accent-cyan: #22D3EE;
   --accent-blue: #6366F1;
   --accent-purple: #A855F7;
   --accent-teal: #06D6A0;
-  --accent-gradient: linear-gradient(135deg, #6366F1, #A855F7, #22D3EE);
+  --accent-gradient: linear-gradient(135deg, #8B5CF6, #6366F1, #22D3EE);
 
   /* Text */
   --text-primary: #F1F5F9;
@@ -871,3 +871,8 @@ a:hover {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* === SETTINGS OVERRIDES === */
+.compact-mode .glass-card, .compact-mode .settings-card { padding: var(--space-4) !important; }
+.compact-mode .setting-row { padding: var(--space-2) 0 !important; }
+.disable-animations *, .disable-animations *::before, .disable-animations *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }

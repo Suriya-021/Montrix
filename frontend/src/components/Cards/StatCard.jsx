@@ -13,7 +13,7 @@ const StatCard = ({ icon: Icon, label, value, change, changeType, color, sparkli
   const changeColor = isPositive ? 'var(--accent-teal)' : 'var(--accent-purple)';
 
   return (
-    <div className="stat-card glass-card">
+    <div className="stat-card glass-card" style={{ borderTopColor: color }}>
       <div className="stat-card-header">
         <div className="stat-card-icon" style={{ backgroundColor: `${color}20`, color: color }}>
           {Icon && <Icon size={20} />}

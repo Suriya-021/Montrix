@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { incomeService } from '../services/incomeService';
-import { Loader2, AlertCircle, Wallet, Plus, Trash2 } from 'lucide-react';
+import { useCurrency } from '../context/CurrencyContext';
+import Toast from '../components/Toast/Toast';
+import { Loader2, AlertCircle, Wallet, Plus, Trash2, TrendingUp, Calendar } from 'lucide-react';
 
 function IncomePage() {
   const [incomes, setIncomes] = useState([]);
@@ -12,6 +14,10 @@ function IncomePage() {
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Toast state
+  const [toast, setToast] = useState(null);
+  const { formatCurrency } = useCurrency();
 
   useEffect(() => {
     loadIncomes();
@@ -34,7 +40,7 @@ function IncomePage() {
   const handleSaveIncome = async (e) => {
     e.preventDefault();
     if (!source || !amount || !date) {
-      setError('Please fill out all fields.');
+      setToast({ message: 'Please fill out all fields.', type: 'error' });
       return;
     }
 
@@ -53,9 +59,10 @@ function IncomePage() {
       setAmount('');
       setDate(new Date().toISOString().split('T')[0]);
       
+      setToast({ message: 'Income recorded successfully!', type: 'success' });
       loadIncomes();
     } catch (err) {
-      setError('Failed to save income record.');
+      setToast({ message: 'Failed to save income record.', type: 'error' });
     } finally {
       setIsSubmitting(false);
     }
@@ -66,18 +73,11 @@ function IncomePage() {
     
     try {
       await incomeService.delete(id);
+      setToast({ message: 'Income deleted successfully.', type: 'success' });
       loadIncomes();
     } catch (err) {
-      setError('Failed to delete income.');
+      setToast({ message: 'Failed to delete income.', type: 'error' });
     }
-  };
-
-  const formatCurrency = (val) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
-    }).format(val);
   };
 
   const formatDate = (dateStr) => {
@@ -88,7 +88,21 @@ function IncomePage() {
     });
   };
 
-  if (isLoading) {
+  // Calculate statistics
+  const totalIncome = incomes.reduce((sum, inc) => sum + Number(inc.amount), 0);
+  
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+  const thisMonthIncome = incomes
+    .filter(inc => {
+      const d = new Date(inc.date);
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    })
+    .reduce((sum, inc) => sum + Number(inc.amount), 0);
+    
+  const uniqueSources = new Set(incomes.map(inc => inc.source)).size;
+
+  if (isLoading && incomes.length === 0) {
     return (
       <div className="empty-state">
         <Loader2 className="empty-state__icon" style={{ animation: 'spin 1s linear infinite' }} />
@@ -98,17 +112,54 @@ function IncomePage() {
   }
 
   return (
-    <div>
-      <div className="page-header">
-        <h1 className="page-title">Income & Cash Flow</h1>
+    <div className="fade-in">
+      <div className="page-header" style={{ marginBottom: '2rem' }}>
+        <h1 className="page-title">Income</h1>
+        <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>Track your earnings and cash flow</p>
       </div>
 
       {error && (
-        <div style={{ background: 'var(--error)', color: 'white', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div style={{ background: 'var(--error)', color: 'white', padding: '1rem', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <AlertCircle size={20} />
           {error}
         </div>
       )}
+      
+      {/* Summary Stats Row */}
+      <div className="stat-grid" style={{ marginBottom: '2rem' }}>
+        {/* Total Income Stat */}
+        <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '1.5rem' }}>
+          <div style={{ background: 'rgba(6, 214, 160, 0.15)', padding: '1rem', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <TrendingUp size={24} style={{ color: 'var(--accent-primary)' }} />
+          </div>
+          <div>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Total Income</p>
+            <h3 style={{ fontSize: '1.5rem', margin: 0, fontFamily: 'var(--font-mono)' }}>{formatCurrency(totalIncome)}</h3>
+          </div>
+        </div>
+
+        {/* This Month Stat */}
+        <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '1.5rem' }}>
+          <div style={{ background: 'rgba(0, 187, 249, 0.15)', padding: '1rem', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Calendar size={24} style={{ color: 'var(--accent-cyan)' }} />
+          </div>
+          <div>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '0.25rem' }}>This Month</p>
+            <h3 style={{ fontSize: '1.5rem', margin: 0, fontFamily: 'var(--font-mono)' }}>{formatCurrency(thisMonthIncome)}</h3>
+          </div>
+        </div>
+
+        {/* Sources Stat */}
+        <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '1.5rem' }}>
+          <div style={{ background: 'rgba(114, 9, 183, 0.15)', padding: '1rem', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Wallet size={24} style={{ color: 'var(--accent-blue)' }} />
+          </div>
+          <div>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Sources</p>
+            <h3 style={{ fontSize: '1.5rem', margin: 0, fontFamily: 'var(--font-mono)' }}>{uniqueSources}</h3>
+          </div>
+        </div>
+      </div>
 
       <div className="dashboard-grid">
         {/* Left Side: Create Form */}
@@ -118,7 +169,7 @@ function IncomePage() {
             Log Income
           </h2>
           
-          <form onSubmit={handleSaveIncome} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <form onSubmit={handleSaveIncome} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div className="form-group">
               <label className="form-label">Income Source</label>
               <input 
@@ -132,7 +183,7 @@ function IncomePage() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Amount (INR)</label>
+              <label className="form-label">Amount</label>
               <input 
                 type="number" 
                 className="form-input"
@@ -185,9 +236,9 @@ function IncomePage() {
                 <tbody>
                   {incomes.map((inc) => (
                     <tr key={inc.id}>
-                      <td className="date">{formatDate(inc.date)}</td>
+                      <td style={{ color: 'var(--text-muted)' }}>{formatDate(inc.date)}</td>
                       <td><strong>{inc.source}</strong></td>
-                      <td className="amount" style={{ color: 'var(--accent-primary)', fontWeight: 'bold' }}>
+                      <td style={{ color: 'var(--accent-primary)', fontWeight: 'bold', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>
                         +{formatCurrency(inc.amount)}
                       </td>
                       <td style={{ textAlign: 'right' }}>
@@ -209,6 +260,14 @@ function IncomePage() {
           )}
         </div>
       </div>
+      
+      {toast && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast(null)} 
+        />
+      )}
     </div>
   );
 }

@@ -24,6 +24,13 @@ function BudgetsPage({ hideHeader = false }) {
 
   useEffect(() => {
     loadData();
+    
+    const handleDataChange = () => {
+      loadData();
+    };
+    
+    window.addEventListener('expenseDataChanged', handleDataChange);
+    return () => window.removeEventListener('expenseDataChanged', handleDataChange);
   }, [currentMonth]);
 
   const loadData = async () => {

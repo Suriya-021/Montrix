@@ -2,11 +2,24 @@
 from app.models.all_models import Budget
 from app.database_orm import SessionLocal
 
-def get_budgets(user_id: int):
+def _budget_to_dict(b):
+    return {
+        "id": b.id,
+        "user_id": b.user_id,
+        "category": b.category,
+        "limit_amount": b.limit_amount,
+        "month": b.month,
+        "created_at": str(b.created_at) if b.created_at else str(b.id)
+    }
+
+def get_budgets(user_id: int, month: str = None):
     db = SessionLocal()
     try:
-        budgets = db.query(Budget).filter(Budget.user_id == user_id).all()
-        return [{"id": b.id, "user_id": b.user_id, "category": b.category, "limit_amount": b.limit_amount, "month": b.month, "created_at": str(b.id)} for b in budgets]
+        query = db.query(Budget).filter(Budget.user_id == user_id)
+        if month:
+            query = query.filter(Budget.month == month)
+        budgets = query.all()
+        return [_budget_to_dict(b) for b in budgets]
     finally:
         db.close()
 
@@ -15,7 +28,7 @@ def get_budget_by_id(user_id: int, budget_id: int):
     try:
         b = db.query(Budget).filter(Budget.id == budget_id, Budget.user_id == user_id).first()
         if b:
-            return {"id": b.id, "user_id": b.user_id, "category": b.category, "limit_amount": b.limit_amount, "month": b.month, "created_at": str(b.id)}
+            return _budget_to_dict(b)
         return None
     finally:
         db.close()
