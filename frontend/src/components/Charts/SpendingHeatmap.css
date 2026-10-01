@@ -41,35 +41,29 @@
 
 .heatmap-months {
   display: flex;
-  margin-left: 28px; /* space for day labels */
+  margin-left: 32px; /* space for day labels */
   font-size: 0.75rem;
   color: var(--text-muted);
 }
 
 .heatmap-month-label {
-  /* Each column is 10px width + 3px gap = 13px */
-  /* If a month spans 4 weeks, width is 4 * 13 = 52px */
   flex-shrink: 0;
+  text-align: left;
 }
 
 .heatmap-grid-wrapper {
   display: flex;
-  gap: 6px;
+  gap: 8px;
 }
 
 .heatmap-days-labels {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  position: relative;
+  width: 24px;
   font-size: 0.65rem;
   color: var(--text-muted);
-}
-
-.heatmap-day-label {
-  height: 10px;
-  line-height: 10px;
-  text-align: right;
-  width: 22px;
+  line-height: 10px; /* match cell height */
 }
 
 .heatmap-grid {
@@ -87,7 +81,7 @@
   width: 10px;
   height: 10px;
   border-radius: 2px;
-  background-color: rgba(255, 255, 255, 0.05); /* Level 0 */
+  background-color: rgba(255, 255, 255, 0.04); /* Level 0 */
   transition: transform 0.1s, box-shadow 0.1s;
   cursor: pointer;
   position: relative;
@@ -100,10 +94,10 @@
   border: 1px solid rgba(255,255,255,0.2);
 }
 
-.heatmap-cell[data-level="1"] { background-color: #0e4438; }
-.heatmap-cell[data-level="2"] { background-color: #007559; }
-.heatmap-cell[data-level="3"] { background-color: #00a67a; }
-.heatmap-cell[data-level="4"] { background-color: #10B981; } /* using emerald for pop */
+.heatmap-cell[data-level="1"] { background-color: #0e4429; }
+.heatmap-cell[data-level="2"] { background-color: #006d32; }
+.heatmap-cell[data-level="3"] { background-color: #26a641; }
+.heatmap-cell[data-level="4"] { background-color: #39d353; }
 
 .heatmap-cell.is-future {
   opacity: 0;
@@ -134,8 +128,8 @@
   height: 10px;
   border-radius: 2px;
 }
-.legend-cell[data-level="0"] { background-color: rgba(255, 255, 255, 0.05); }
-.legend-cell[data-level="1"] { background-color: #0e4438; }
-.legend-cell[data-level="2"] { background-color: #007559; }
-.legend-cell[data-level="3"] { background-color: #00a67a; }
-.legend-cell[data-level="4"] { background-color: #10B981; }
+.legend-cell[data-level="0"] { background-color: rgba(255, 255, 255, 0.04); }
+.legend-cell[data-level="1"] { background-color: #0e4429; }
+.legend-cell[data-level="2"] { background-color: #006d32; }
+.legend-cell[data-level="3"] { background-color: #26a641; }
+.legend-cell[data-level="4"] { background-color: #39d353; }
