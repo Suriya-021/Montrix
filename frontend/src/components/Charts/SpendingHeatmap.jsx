@@ -136,14 +136,14 @@ const SpendingHeatmap = () => {
         {/* Months Row */}
         <div className="heatmap-months">
           {months.map((m, i) => {
-            // Calculate left margin based on column index difference
+            // Calculate width based on column difference. Each column is 13px total (10px + 3px gap)
             const prevColIndex = i === 0 ? 0 : months[i-1].index;
             const diffCols = m.index - prevColIndex;
             return (
               <div 
                 key={i} 
                 className="heatmap-month-label"
-                style={{ width: `${(i === 0 ? m.index : diffCols) * 15}px` }}
+                style={{ width: `${(i === 0 ? m.index : diffCols) * 13}px` }}
               >
                 {m.name}
               </div>
@@ -153,6 +153,17 @@ const SpendingHeatmap = () => {
         
         {/* Grid Area */}
         <div className="heatmap-grid-wrapper">
+          {/* Day Labels */}
+          <div className="heatmap-days-labels">
+            <div className="heatmap-day-label"></div>
+            <div className="heatmap-day-label">Mon</div>
+            <div className="heatmap-day-label"></div>
+            <div className="heatmap-day-label">Wed</div>
+            <div className="heatmap-day-label"></div>
+            <div className="heatmap-day-label">Fri</div>
+            <div className="heatmap-day-label"></div>
+          </div>
+          
           <div className="heatmap-grid">
             {grid.map((col, cIdx) => (
               <div key={cIdx} className="heatmap-col">

@@ -41,29 +41,35 @@
 
 .heatmap-months {
   display: flex;
-  margin-left: 28px; /* space for day labels if we had them, or just to align */
+  margin-left: 28px; /* space for day labels */
   font-size: 0.75rem;
   color: var(--text-muted);
 }
 
 .heatmap-month-label {
-  width: 52px; /* Roughly 4 columns * 13px */
+  /* Each column is 10px width + 3px gap = 13px */
+  /* If a month spans 4 weeks, width is 4 * 13 = 52px */
   flex-shrink: 0;
 }
 
 .heatmap-grid-wrapper {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
 .heatmap-days-labels {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  gap: 3px;
   font-size: 0.65rem;
   color: var(--text-muted);
-  padding-top: 8px;
-  padding-bottom: 8px;
+}
+
+.heatmap-day-label {
+  height: 10px;
+  line-height: 10px;
+  text-align: right;
+  width: 22px;
 }
 
 .heatmap-grid {
@@ -78,8 +84,8 @@
 }
 
 .heatmap-cell {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border-radius: 2px;
   background-color: rgba(255, 255, 255, 0.05); /* Level 0 */
   transition: transform 0.1s, box-shadow 0.1s;
