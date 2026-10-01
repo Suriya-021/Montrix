@@ -144,21 +144,15 @@ const SpendingHeatmap = () => {
       <div className="heatmap-container">
         {/* Months Row */}
         <div className="heatmap-months">
-          {months.map((m, i) => {
-            // Calculate left margin based on column index difference
-            const prevColIndex = i === 0 ? 0 : months[i-1].index;
-            const diffCols = m.index - prevColIndex;
-            // 13px per column (10px width + 3px gap)
-            return (
-              <div 
-                key={i} 
-                className="heatmap-month-label"
-                style={{ width: `${(i === 0 ? m.index : diffCols) * 13}px` }}
-              >
-                {m.name}
-              </div>
-            );
-          })}
+          {months.map((m, i) => (
+            <div 
+              key={i} 
+              className="heatmap-month-label"
+              style={{ left: `${m.index * 13}px` }}
+            >
+              {m.name}
+            </div>
+          ))}
         </div>
         
         {/* Grid Area with Y-axis */}
