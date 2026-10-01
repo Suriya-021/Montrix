@@ -31,7 +31,7 @@ export default function ProfileSettings() {
   const initial = user?.name ? user.name.charAt(0).toUpperCase() : 'U';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)', minWidth: 0 }}>
       <div className="settings-card glass-card fade-in">
         <div className="settings-card-header">
           <h2 className="settings-card-title">Profile</h2>

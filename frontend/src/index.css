@@ -876,3 +876,22 @@ a:hover {
 .compact-mode .glass-card, .compact-mode .settings-card { padding: var(--space-4) !important; }
 .compact-mode .setting-row { padding: var(--space-2) 0 !important; }
 .disable-animations *, .disable-animations *::before, .disable-animations *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+
+/* === CUSTOM SCROLLBAR === */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-elevated);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
