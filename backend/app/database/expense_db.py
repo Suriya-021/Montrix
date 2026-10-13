@@ -7,10 +7,10 @@ def _expense_to_dict(e):
     return {
         "id": e.id, 
         "user_id": e.user_id, 
-        "amount": e.amount, 
+        "amount": float(e.amount), 
         "category": e.category, 
         "description": e.description, 
-        "date": e.date, 
+        "date": str(e.date) if e.date else "", 
         "created_at": str(e.created_at) if getattr(e, 'created_at', None) else str(e.id)
     }
 

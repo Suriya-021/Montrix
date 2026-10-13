@@ -36,7 +36,23 @@ def get_budget_by_id(user_id: int, budget_id: int):
 def create_budget(user_id: int, budget_obj):
     db = SessionLocal()
     try:
-        new_budget = Budget(user_id=user_id, category=budget_obj.category, limit_amount=budget_obj.limit_amount, month=budget_obj.month)
+        existing = db.query(Budget).filter(
+            Budget.user_id == user_id,
+            Budget.category == budget_obj.category,
+            Budget.month == budget_obj.month
+        ).first()
+        if existing:
+            existing.limit_amount = budget_obj.limit_amount
+            db.commit()
+            db.refresh(existing)
+            return existing.id
+
+        new_budget = Budget(
+            user_id=user_id, 
+            category=budget_obj.category, 
+            limit_amount=budget_obj.limit_amount, 
+            month=budget_obj.month
+        )
         db.add(new_budget)
         db.commit()
         db.refresh(new_budget)

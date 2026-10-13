@@ -7,9 +7,9 @@ def _goal_to_dict(g):
         "id": g.id,
         "user_id": g.user_id,
         "title": g.title,
-        "target_amount": g.target_amount,
-        "current_amount": g.current_amount,
-        "target_date": g.target_date,
+        "target_amount": float(g.target_amount),
+        "current_amount": float(g.current_amount),
+        "target_date": str(g.target_date) if g.target_date else None,
         "created_at": str(g.created_at) if getattr(g, 'created_at', None) else str(g.id)
     }
 
@@ -34,7 +34,15 @@ def get_goal_by_id(user_id: int, goal_id: int):
 def create_goal(user_id: int, goal_obj):
     db = SessionLocal()
     try:
-        new_goal = Goal(user_id=user_id, title=goal_obj.title, target_amount=goal_obj.target_amount, target_date=goal_obj.target_date, current_amount=0.0)
+        initial_amount = getattr(goal_obj, 'current_amount', 0.0)
+        initial_amount = initial_amount if initial_amount is not None else 0.0
+        new_goal = Goal(
+            user_id=user_id, 
+            title=goal_obj.title, 
+            target_amount=goal_obj.target_amount, 
+            target_date=goal_obj.target_date, 
+            current_amount=initial_amount
+        )
         db.add(new_goal)
         db.commit()
         db.refresh(new_goal)

@@ -7,9 +7,9 @@ def _sub_to_dict(s):
         "id": s.id,
         "user_id": s.user_id,
         "title": s.title,
-        "amount": s.amount,
+        "amount": float(s.amount),
         "frequency": s.frequency,
-        "next_due_date": s.next_due_date,
+        "next_due_date": str(s.next_due_date) if s.next_due_date else "",
         "created_at": str(s.created_at) if getattr(s, 'created_at', None) else str(s.id)
     }
 

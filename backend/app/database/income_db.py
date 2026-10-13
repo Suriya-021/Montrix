@@ -2,11 +2,21 @@
 from app.models.all_models import Income
 from app.database_orm import SessionLocal
 
+def _income_to_dict(i):
+    return {
+        "id": i.id,
+        "user_id": i.user_id,
+        "source": i.source,
+        "amount": float(i.amount),
+        "date": str(i.date) if i.date else "",
+        "created_at": str(i.created_at) if getattr(i, 'created_at', None) else str(i.id)
+    }
+
 def get_incomes(user_id: int):
     db = SessionLocal()
     try:
         incomes = db.query(Income).filter(Income.user_id == user_id).order_by(Income.date.desc()).all()
-        return [{"id": i.id, "user_id": i.user_id, "source": i.source, "amount": i.amount, "date": i.date, "created_at": str(i.created_at)} for i in incomes]
+        return [_income_to_dict(i) for i in incomes]
     finally:
         db.close()
 
@@ -15,7 +25,7 @@ def get_income_by_id(user_id: int, income_id: int):
     try:
         i = db.query(Income).filter(Income.id == income_id, Income.user_id == user_id).first()
         if i:
-            return {"id": i.id, "user_id": i.user_id, "source": i.source, "amount": i.amount, "date": i.date, "created_at": str(i.created_at)}
+            return _income_to_dict(i)
         return None
     finally:
         db.close()
