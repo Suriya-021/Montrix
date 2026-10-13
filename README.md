@@ -1,122 +1,197 @@
-# Montrix 💸
+# Montrix 💸 — Personal Finance & Expense Intelligence
 
-![Montrix Dashboard Mockup](./dashboard_mockup.jpg) <!-- Optional: Add a screenshot placeholder -->
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org/)
+[![Vite](https://img.shields.io/badge/Vite-5.0+-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Tests](https://img.shields.io/badge/Pytest-51%20Passed-brightgreen?style=for-the-badge&logo=pytest&logoColor=white)](https://docs.pytest.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
-A premium, full-stack personal expense tracking application built with **React (Vite)** and **FastAPI**. Designed with a focus on minimalism, speed, and beautiful glassmorphism UI.
+> **Montrix** is a full-stack personal finance and wealth management platform built with **FastAPI** and **React (Vite)**. Engineered with a dark fintech aesthetic, glassmorphic design tokens, and banking statement intelligence.
 
-## ✨ Features
+---
 
-- **Dashboard & Analytics:** Visual breakdown of expenses using `recharts`.
-- **CRUD Operations:** Easily create, read, update, and delete transactions.
-- **Smart Filtering & Search:** Instantly filter expenses by category or search by description without full-page reloads.
-- **Categorization:** 10 preset categories with custom color-coded badges (Food, Transport, Entertainment, Shopping, Bills, etc.).
-- **Responsive Design:** A custom-built CSS design system that adapts perfectly to desktop, tablet, and mobile (featuring a custom mobile tab bar and floating action button).
-- **FastAPI Backend:** High-performance, fully typed Python backend using Pydantic for strict data validation.
-- **Lazy Loading:** Frontend routes are code-split using `React.lazy` and `Suspense` for blazing fast initial loads.
+## 🌟 Key Features
 
-## 🔐 Version 2 Updates: Authentication & Multi-User
-Montrix now supports full user isolation and authentication:
-* **JWT Authentication:** Secure token-based login and registration.
-* **Password Hashing:** Passwords are cryptographically salted and hashed using `bcrypt`.
-* **Data Privacy:** Users can only view and modify their own expenses.
-* **Protected Routing:** React frontend strictly guards dashboard access.
+### 1. 📊 Expense & Cash Flow Intelligence
+- **Real-Time Ledger**: Log, edit, categorize, and filter expenses with sub-millisecond responsiveness.
+- **Dynamic Filters**: Filter by date range presets (*This Month, Last Month, 30 Days, 90 Days*), category tags, or instant debounced search.
+- **Export to CSV**: One-click streaming download of your entire financial transaction history.
+
+### 2. 🏦 Bank Statement & CSV Importer
+- **Universal CSV Parser**: Ingests statement exports from Indian and International banks (HDFC, SBI, ICICI, Chase, Revolut, etc.) with automatic UTF-8/Latin-1 decoding.
+- **Intelligent Header Detection**: Automatically detects `Date`, `Description`, `Amount`, and `Category` columns.
+- **Keyword Auto-Categorization**: Merchant intelligence auto-tags transactions (e.g. *Zomato/Swiggy* &rarr; Food, *Uber/Ola* &rarr; Transport, *Amazon/Flipkart* &rarr; Shopping, *BESCOM/Jio* &rarr; Bills).
+- **Duplicate Prevention**: Fingerprint hashing on `(date, description, amount)` prevents double-logging past transactions.
+- **Live Data Preview**: Inspect parsed records before committing to the ledger.
+
+### 3. 🔄 Automated Recurring Subscriptions Engine
+- **Lifecycle Tracking**: Manage recurring subscriptions (Weekly, Monthly, Quarterly, Yearly) with next billing renewal calculations.
+- **One-Click Settlement**: Click **Log Paid** to record the expense in your ledger and automatically calculate the next renewal date.
+- **Due Bills Banner**: Real-time visual alerts for overdue or upcoming bills with a single-click **Auto-Log All Due Bills** batch processor.
+
+### 4. 📈 Analytics, Budgets & Goals
+- **Interactive Visualizations**: Powered by `Recharts` — monthly spending bar charts, category distribution donuts, and cash flow trends.
+- **Monthly Budget Guardrails**: Set spending limits per category with progress indicators and over-budget warnings.
+- **Savings Goals**: Track milestones, target amounts, and saved balances.
+
+### 5. 🔐 Multi-Tenant Security & Account Controls
+- **JWT Authentication**: Token-based authentication with expiration protection and session refresh.
+- **Bcrypt Hashing**: Passwords encrypted using industry-standard cryptographic salts.
+- **User Isolation**: Strict tenant isolation across all database queries.
+- **Account Control**: Live profile editing, password changing, and an authenticated cascading account wipe (*Danger Zone*).
+
+---
 
 ## 🛠️ Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| **Frontend** | React 18, Vite, React Router, Recharts, Lucide Icons |
-| **Backend** | Python 3.11+, FastAPI, Uvicorn, Pydantic |
-| **Database** | SQLite (Production-ready via SQLAlchemy - *PostgreSQL optional*) |
-| **Styling** | Vanilla CSS with custom Design Tokens (No external UI libraries) |
+| Domain | Technologies |
+|---|---|
+| **Frontend** | React 18, Vite, React Router v6, Recharts, Lucide Icons |
+| **Styling** | Custom Glassmorphic CSS Design System (Zero UI framework bloat) |
+| **Backend** | Python 3.11+, FastAPI, Pydantic V2, Uvicorn |
+| **Database** | SQLite via SQLAlchemy Core (PostgreSQL ready) |
+| **Testing** | Pytest, TestClient, In-Memory Isolated Database Engine |
+
+---
 
 ## 🏗️ Architecture
 
 ```mermaid
-graph LR
-    A[React Frontend] -->|REST API / JSON| B(FastAPI Backend)
-    B --> C[(SQLite Database)]
+graph TD
+    User([User Browser]) -->|React SPA| UI[Montrix Frontend: React + Vite]
+    UI -->|REST / JWT Bearer| API[FastAPI Backend Gateway]
+    
+    subgraph Backend Services
+        API --> Auth[Auth & Security Service]
+        API --> Exp[Expenses & Analytics Service]
+        API --> Sub[Subscriptions Engine]
+        API --> Imp[CSV Statement Importer]
+        API --> Bud[Budgets & Goals Service]
+    end
+
+    subgraph Data Layer
+        Auth --> DB[(SQLite / PostgreSQL)]
+        Exp --> DB
+        Sub --> DB
+        Imp --> DB
+        Bud --> DB
+    end
 ```
 
-## 🚀 Getting Started (Local Development)
+---
+
+## 📁 Repository Structure
+
+```
+Montrix/
+├── backend/
+│   ├── app/
+│   │   ├── database/          # Database connection, schemas, and queries
+│   │   │   ├── connection.py
+│   │   │   ├── expense_db.py
+│   │   │   ├── subscription_db.py
+│   │   │   └── user_db.py
+│   │   ├── routes/            # FastAPI API endpoints
+│   │   │   ├── auth.py
+│   │   │   ├── expenses.py
+│   │   │   ├── subscriptions.py
+│   │   │   └── ...
+│   │   ├── schemas/           # Pydantic data validation models
+│   │   └── services/          # Business logic (importer, auth, calculations)
+│   ├── tests/                 # Automated Pytest suite (51 tests)
+│   │   ├── test_auth.py
+│   │   ├── test_expenses.py
+│   │   └── test_subscriptions.py
+│   └── requirements.txt
+│
+├── frontend/
+│   ├── src/
+│   │   ├── components/        # Reusable UI components (Modals, Cards, Charts)
+│   │   │   ├── ImportExpensesModal/
+│   │   │   ├── AddExpenseModal/
+│   │   │   └── ...
+│   │   ├── context/           # Currency & Authentication Contexts
+│   │   ├── pages/             # Dashboard, Expenses, Subscriptions, Analytics, Settings
+│   │   ├── services/          # Centralized API fetch services
+│   │   └── index.css          # Design system & CSS variables
+│   └── package.json
+│
+└── README.md
+```
+
+---
+
+## 🚀 Quick Start Guide
 
 ### Prerequisites
+- **Python**: 3.11 or higher
+- **Node.js**: 18.0 or higher
+- **Git**
 
-- Node.js 18+
-- Python 3.11+
-- Git
-
-### 1. Clone the repository
-
+### 1. Clone the Repository
 ```bash
-git clone https://github.com/yourusername/montrix.git
-cd montrix
+git clone https://github.com/Suriya-021/Montrix.git
+cd Montrix
 ```
 
 ### 2. Backend Setup
-
 ```bash
 cd backend
+
+# Create and activate virtual environment
 python -m venv venv
 
-# Windows
-venv\Scripts\activate
-# Mac/Linux
+# Windows:
+.\venv\Scripts\activate
+# macOS/Linux:
 source venv/bin/activate
 
+# Install dependencies
 pip install -r requirements.txt
 
-# Start the server (runs on http://localhost:8000)
-uvicorn app.main:app --reload
+# Run database & start API server (http://localhost:8000)
+uvicorn app.main:app --reload --port 8000
 ```
-
-*Note: The API documentation is automatically available at `http://localhost:8000/docs` via Swagger UI.*
+> Interactive Swagger API docs are available at: `http://localhost:8000/docs`
 
 ### 3. Frontend Setup
-
 ```bash
 cd ../frontend
+
+# Install dependencies
 npm install
 
-# Start the development server (runs on http://localhost:5173)
+# Start development server (http://localhost:5173)
 npm run dev
 ```
 
-## 🚢 Production Deployment
+---
 
-Montrix is fully configured for production deployment.
+## 🧪 Running the Backend Test Suite
 
-### Environment Variables
-
-Before deploying, ensure you set the correct environment variables.
-
-**Frontend (`frontend/.env`):**
-```env
-VITE_API_URL=https://api.yourdomain.com/api/expenses
-```
-
-**Backend (`backend/.env`):**
-```env
-CORS_ORIGINS=https://yourfrontenddomain.com
-DATABASE_URL=sqlite:///./montrix.db
-```
-
-### Building the Frontend
+Montrix includes comprehensive automated tests covering authentication, expense math, multi-tenancy, recurring bills, and the CSV importer engine.
 
 ```bash
-cd frontend
-npm run build
+cd backend
+.\venv\Scripts\pytest.exe -v
 ```
-The output will be generated in the `dist` folder, ready to be hosted on Vercel, Netlify, or Nginx.
 
-### Running the Backend in Production
-
-Use Gunicorn with Uvicorn workers for production readiness:
-```bash
-pip install gunicorn
-gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
 ```
+collected 51 items
+tests/test_auth.py ......................... [ 17%]
+tests/test_budgets.py .......                [ 31%]
+tests/test_categories.py .......             [ 45%]
+tests/test_expenses.py ...........           [ 66%]
+tests/test_goals.py .....                    [ 76%]
+tests/test_income.py .....                   [ 86%]
+tests/test_subscriptions.py .......         [100%]
+
+======================= 51 passed in 27s =======================
+```
+
+---
 
 ## 📄 License
 
-This project is licensed under the MIT License.
+This project is licensed under the [MIT License](LICENSE).

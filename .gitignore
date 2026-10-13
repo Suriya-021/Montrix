@@ -1,31 +1,55 @@
 # ===== Python =====
 __pycache__/
 *.py[cod]
+*$py.class
 *.pyo
 *.egg-info/
 dist/
 build/
 *.egg
 venv/
+.venv/
+env/
 .env
+.env.*
+!.env.example
+
+# ===== Testing & Coverage =====
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# ===== Databases =====
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
 
 # ===== Node.js =====
 node_modules/
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+frontend/dist/
+dist/
+dist-ssr/
 
-# ===== IDE =====
+# ===== IDE & Editors =====
 .vscode/
+!.vscode/extensions.json
 .idea/
 *.swp
 *.swo
+*.sublime-project
+*.sublime-workspace
+.cursor/
 
-# ===== OS =====
+# ===== OS Files =====
 .DS_Store
 Thumbs.db
 desktop.ini
-
-# ===== Database =====
-*.db
-
-# ===== Build output =====
-frontend/dist/
+*.local
