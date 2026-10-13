@@ -1,18 +1,38 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
-from typing import List
+from typing import List, Optional, Union
 import io
 import csv
 
-from app.schemas.expense import ExpenseCreate, ExpenseResponse
+from app.schemas.expense import ExpenseCreate, ExpenseResponse, PaginatedExpensesResponse
 from app.services import expense_service
 from app.services.auth_service import get_current_user
 
 router = APIRouter(prefix="/api/expenses", tags=["Expenses"])
 
-@router.get("/", response_model=List[ExpenseResponse])
-def get_all_expenses(current_user: dict = Depends(get_current_user)):
-    return expense_service.get_all_expenses(current_user['id'])
+@router.get("/", response_model=Union[PaginatedExpensesResponse, List[ExpenseResponse]])
+def get_all_expenses(
+    start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
+    end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
+    category: Optional[str] = Query(None, description="Filter by category"),
+    search: Optional[str] = Query(None, description="Search description"),
+    sort_by: Optional[str] = Query("date", description="Sort field ('date' or 'amount')"),
+    sort_order: Optional[str] = Query("desc", description="Sort order ('asc' or 'desc')"),
+    page: Optional[int] = Query(None, ge=1, description="Page number (1-indexed)"),
+    page_size: Optional[int] = Query(20, ge=1, le=100, description="Page size"),
+    current_user: dict = Depends(get_current_user)
+):
+    return expense_service.get_all_expenses(
+        user_id=current_user['id'],
+        start_date=start_date,
+        end_date=end_date,
+        category=category,
+        search=search,
+        sort_by=sort_by,
+        sort_order=sort_order,
+        page=page,
+        page_size=page_size
+    )
 
 from typing import Optional
 

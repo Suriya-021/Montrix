@@ -10,8 +10,30 @@ def create_expense(expense: ExpenseCreate, user_id: int):
         raise HTTPException(status_code=500, detail="Failed to create expense")
     return created
 
-def get_all_expenses(user_id: int):
-    return expense_db.get_all_expenses(user_id)
+from typing import Optional
+
+def get_all_expenses(
+    user_id: int,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    category: Optional[str] = None,
+    search: Optional[str] = None,
+    sort_by: Optional[str] = "date",
+    sort_order: Optional[str] = "desc",
+    page: Optional[int] = None,
+    page_size: Optional[int] = 20
+):
+    return expense_db.get_all_expenses(
+        user_id=user_id,
+        start_date=start_date,
+        end_date=end_date,
+        category=category,
+        search=search,
+        sort_by=sort_by,
+        sort_order=sort_order,
+        page=page,
+        page_size=page_size
+    )
 
 def get_expense(expense_id: int, user_id: int):
     expense = expense_db.get_expense_by_id(expense_id, user_id)

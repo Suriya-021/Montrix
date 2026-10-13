@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Plus, Check, Loader2 } from 'lucide-react';
+import { categoryService } from '../../services/categoryService';
 import './AddExpenseModal.css';
 
-const CATEGORIES = [
+const DEFAULT_FALLBACK_CATEGORIES = [
   'Food', 'Transport', 'Entertainment', 'Shopping', 'Bills', 
   'Health', 'Education', 'Games', 'Investment', 'Other'
 ];
@@ -12,7 +13,13 @@ const CATEGORIES = [
  * A popup form to create a new expense entry or edit an existing one.
  */
 function AddExpenseModal({ isOpen, onClose, onAdd, expenseToEdit }) {
-  // We use useState to keep track of what the user is typing in the form
+  const [categories, setCategories] = useState(DEFAULT_FALLBACK_CATEGORIES.map(c => ({ name: c, is_default: true })));
+  const [showNewCatInput, setShowNewCatInput] = useState(false);
+  const [newCatName, setNewCatName] = useState('');
+  const [newCatColor, setNewCatColor] = useState('#8B5CF6');
+  const [catError, setCatError] = useState('');
+  const [isCreatingCat, setIsCreatingCat] = useState(false);
+
   const [formData, setFormData] = useState({
     amount: '',
     category: 'Food',
@@ -22,39 +29,64 @@ function AddExpenseModal({ isOpen, onClose, onAdd, expenseToEdit }) {
 
   const [errors, setErrors] = useState({});
 
-  // useEffect watches the `expenseToEdit` and `isOpen` variables.
-  // When the modal opens, if we passed an expense to edit, we fill the form with its data!
+  useEffect(() => {
+    if (isOpen) {
+      categoryService.getAll().then(res => {
+        if (Array.isArray(res) && res.length > 0) {
+          setCategories(res);
+        }
+      }).catch(() => {});
+    }
+  }, [isOpen]);
+
   useEffect(() => {
     if (expenseToEdit) {
       setFormData({
         amount: expenseToEdit.amount,
         category: expenseToEdit.category,
         description: expenseToEdit.description,
-        // Ensure the date is formatted for the HTML input (YYYY-MM-DD)
         date: new Date(expenseToEdit.date).toISOString().split('T')[0]
       });
     } else {
-      // Otherwise, start with a fresh blank form
       setFormData({
         amount: '',
-        category: 'Food',
+        category: categories[0]?.name || 'Food',
         description: '',
         date: new Date().toISOString().split('T')[0]
       });
     }
-  }, [expenseToEdit, isOpen]);
+  }, [expenseToEdit, isOpen, categories.length]);
 
-  // If the modal isn't open, don't render anything
   if (!isOpen) return null;
 
-  // Handle changes when the user types in the input fields
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    
-    // Clear errors for this field as they type
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: null }));
+    }
+  };
+
+  const handleCreateCategory = async () => {
+    if (!newCatName || !newCatName.trim()) {
+      setCatError('Category name is required');
+      return;
+    }
+    try {
+      setIsCreatingCat(true);
+      setCatError('');
+      const created = await categoryService.create({
+        name: newCatName.trim(),
+        color: newCatColor
+      });
+      setCategories(prev => [...prev, created]);
+      setFormData(prev => ({ ...prev, category: created.name }));
+      setNewCatName('');
+      setShowNewCatInput(false);
+    } catch (err) {
+      setCatError(err.message || 'Failed to create category');
+    } finally {
+      setIsCreatingCat(false);
     }
   };
 
@@ -122,17 +154,81 @@ function AddExpenseModal({ isOpen, onClose, onAdd, expenseToEdit }) {
 
           {/* Category Field */}
           <div className="form-group">
-            <label className="form-label">Category</label>
-            <select
-              name="category"
-              className="form-select"
-              value={formData.category}
-              onChange={handleChange}
-            >
-              {CATEGORIES.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+              <label className="form-label" style={{ margin: 0 }}>Category</label>
+              <button
+                type="button"
+                onClick={() => { setShowNewCatInput(!showNewCatInput); setCatError(''); }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#8B5CF6',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '3px'
+                }}
+              >
+                <Plus size={13} /> {showNewCatInput ? 'Cancel' : 'New Category'}
+              </button>
+            </div>
+
+            {showNewCatInput ? (
+              <div style={{
+                background: 'rgba(15, 15, 25, 0.8)',
+                padding: '0.75rem',
+                borderRadius: 'var(--radius-sm)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.5rem',
+                marginBottom: '0.5rem'
+              }}>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g. Rent, Pet, Gym..."
+                    value={newCatName}
+                    onChange={(e) => setNewCatName(e.target.value)}
+                    style={{ flex: 1, padding: '0.45rem 0.75rem', fontSize: '0.85rem' }}
+                    maxLength="50"
+                  />
+                  <input
+                    type="color"
+                    value={newCatColor}
+                    onChange={(e) => setNewCatColor(e.target.value)}
+                    style={{ width: '38px', height: '36px', padding: 2, background: 'none', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '4px', cursor: 'pointer' }}
+                    title="Choose category color"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCreateCategory}
+                    disabled={isCreatingCat}
+                    className="btn btn--primary"
+                    style={{ padding: '0.45rem 0.85rem', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    {isCreatingCat ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Check size={14} />} Add
+                  </button>
+                </div>
+                {catError && <div style={{ color: '#EF4444', fontSize: '0.75rem' }}>{catError}</div>}
+              </div>
+            ) : (
+              <select
+                name="category"
+                className="form-select"
+                value={formData.category}
+                onChange={handleChange}
+              >
+                {categories.map(cat => (
+                  <option key={cat.id || cat.name} value={cat.name}>
+                    {cat.name} {!cat.is_default ? '★ (Custom)' : ''}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           {/* Description Field */}

@@ -15,6 +15,12 @@ export const budgetService = {
     });
   },
 
+  // Get live budget status, remaining limits, and overspending alerts
+  getStatus: async (month) => {
+    const endpoint = month ? `/budgets/status?month=${encodeURIComponent(month)}` : '/budgets/status';
+    return await apiFetch(endpoint);
+  },
+
   // Delete a budget
   delete: async (id) => {
     return await apiFetch(`/budgets/${id}`, {

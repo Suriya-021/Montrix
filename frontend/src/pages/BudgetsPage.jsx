@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { budgetService } from '../services/budgetService';
 import { expenseService } from '../services/expenseService';
+import { categoryService } from '../services/categoryService';
 import { useCurrency } from '../context/CurrencyContext';
 import Toast from '../components/Toast/Toast';
 import { 
@@ -15,12 +16,12 @@ import {
   PiggyBank 
 } from 'lucide-react';
 
-const CATEGORIES = [
+const DEFAULT_CATEGORIES = [
   'Food', 'Transport', 'Entertainment', 'Shopping', 
   'Bills', 'Health', 'Education', 'Games', 'Investment', 'Other'
 ];
 
-const CATEGORY_COLORS = {
+const DEFAULT_CATEGORY_COLORS = {
   Food: '#06D6A0',
   Transport: '#3B82F6',
   Entertainment: '#8B5CF6',
@@ -40,14 +41,20 @@ function BudgetsPage({ hideHeader = false }) {
   const [isLoading, setIsLoading] = useState(true);
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
   
+  // Dynamic categories state
+  const [categoriesList, setCategoriesList] = useState(DEFAULT_CATEGORIES);
+  const [categoryColorMap, setCategoryColorMap] = useState(DEFAULT_CATEGORY_COLORS);
+  
   // Default to current month (YYYY-MM)
   const [currentMonth, setCurrentMonth] = useState(new Date().toISOString().slice(0, 7));
   
   // Form state
-  const [selectedCategory, setSelectedCategory] = useState(CATEGORIES[0]);
+  const [selectedCategory, setSelectedCategory] = useState(DEFAULT_CATEGORIES[0]);
   const [limitAmount, setLimitAmount] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+
+  const [budgetStatus, setBudgetStatus] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -60,18 +67,30 @@ function BudgetsPage({ hideHeader = false }) {
   const loadData = async () => {
     try {
       setIsLoading(true);
-      // Fetch both budgets and month-specific stats in parallel
-      const [budgetsData, statsData] = await Promise.all([
-        budgetService.getAll(currentMonth),
-        expenseService.getStats(currentMonth) // Month-filtered stats!
+      // Fetch live budget status, raw budget records, and available categories in parallel
+      const [statusData, budgetsData, fetchedCats] = await Promise.all([
+        budgetService.getStatus(currentMonth).catch(() => null),
+        budgetService.getAll(currentMonth).catch(() => []),
+        categoryService.getAll().catch(() => [])
       ]);
       
+      setBudgetStatus(statusData);
       setBudgets(Array.isArray(budgetsData) ? budgetsData : []);
+
+      if (Array.isArray(fetchedCats) && fetchedCats.length > 0) {
+        const names = fetchedCats.map(c => c.name);
+        setCategoriesList(names);
+        const colorMap = { ...DEFAULT_CATEGORY_COLORS };
+        fetchedCats.forEach(c => {
+          if (c.color) colorMap[c.name] = c.color;
+        });
+        setCategoryColorMap(colorMap);
+      }
       
       const spent = {};
-      if (statsData && statsData.category_breakdown) {
-        statsData.category_breakdown.forEach(item => {
-          spent[item.name] = item.value;
+      if (statusData && Array.isArray(statusData.categories)) {
+        statusData.categories.forEach(item => {
+          spent[item.category] = item.spent_amount;
         });
       }
       setSpentByCategory(spent);
@@ -170,6 +189,38 @@ function BudgetsPage({ hideHeader = false }) {
         </div>
       </div>
 
+      {/* Live Budget Alerts Banner */}
+      {budgetStatus?.alerts?.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginBottom: 'var(--space-6)' }}>
+          {budgetStatus.alerts.map((alert, idx) => (
+            <div 
+              key={idx}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.85rem',
+                padding: '0.9rem 1.25rem',
+                borderRadius: 'var(--radius-md)',
+                background: alert.type === 'danger' 
+                  ? 'linear-gradient(90deg, rgba(239, 68, 68, 0.18), rgba(239, 68, 68, 0.05))' 
+                  : 'linear-gradient(90deg, rgba(245, 158, 11, 0.18), rgba(245, 158, 11, 0.05))',
+                border: `1px solid ${alert.type === 'danger' ? 'rgba(239, 68, 68, 0.4)' : 'rgba(245, 158, 11, 0.4)'}`,
+                boxShadow: alert.type === 'danger' ? '0 0 20px rgba(239, 68, 68, 0.15)' : 'none',
+                color: alert.type === 'danger' ? '#FCA5A5' : '#FCD34D'
+              }}
+            >
+              <AlertTriangle size={20} style={{ color: alert.type === 'danger' ? '#EF4444' : '#F59E0B', flexShrink: 0 }} />
+              <div style={{ flex: 1, fontSize: '0.9rem' }}>
+                <span style={{ fontWeight: 700, color: alert.type === 'danger' ? '#EF4444' : '#F59E0B' }}>
+                  {alert.type === 'danger' ? '🚨 Limit Exceeded: ' : '⚠️ Approaching Limit: '}
+                </span>
+                {alert.message}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* KPI Cards Row */}
       <div className="stat-grid" style={{ marginBottom: 'var(--space-6)' }}>
         <div className="glass-card" style={{ padding: 'var(--space-4)', borderTop: '2px solid #8B5CF6' }}>
@@ -242,7 +293,7 @@ function BudgetsPage({ hideHeader = false }) {
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
                 >
-                  {CATEGORIES.map(cat => (
+                  {categoriesList.map(cat => (
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
                 </select>
@@ -252,7 +303,7 @@ function BudgetsPage({ hideHeader = false }) {
                 <label className="form-label">Monthly Limit</label>
                 <input 
                   type="number" 
-                  className="form-input"
+                  className="form-input" 
                   value={limitAmount}
                   onChange={(e) => setLimitAmount(e.target.value)}
                   placeholder="0.00"
@@ -304,44 +355,56 @@ function BudgetsPage({ hideHeader = false }) {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
                 {budgets.map(budget => {
-                  const spent = spentByCategory[budget.category] || 0;
+                  const categoryStatus = budgetStatus?.categories?.find(c => c.category === budget.category);
+                  const spent = categoryStatus ? categoryStatus.spent_amount : (spentByCategory[budget.category] || 0);
                   const limit = budget.limit_amount || 1;
-                  const percentage = Math.round((spent / limit) * 100);
-                  const isOver = spent > limit;
-                  const catColor = CATEGORY_COLORS[budget.category] || '#8B5CF6';
+                  const percentage = categoryStatus ? categoryStatus.percentage_used : Math.round((spent / limit) * 100);
+                  const status = categoryStatus ? categoryStatus.status : (spent > limit ? 'danger' : (percentage >= 80 ? 'warning' : 'normal'));
+                  const isDanger = status === 'danger';
+                  const isWarning = status === 'warning';
+                  const catColor = categoryColorMap[budget.category] || '#8B5CF6';
 
                   return (
                     <div 
                       key={budget.id} 
                       style={{ 
-                        padding: '1rem',
-                        background: 'rgba(15, 15, 25, 0.7)',
+                        padding: '1.1rem',
+                        background: isDanger ? 'rgba(35, 15, 20, 0.7)' : (isWarning ? 'rgba(30, 25, 15, 0.7)' : 'rgba(15, 15, 25, 0.7)'),
                         borderRadius: 'var(--radius-md)',
-                        border: '1px solid rgba(255, 255, 255, 0.05)',
+                        border: isDanger 
+                          ? '1px solid rgba(239, 68, 68, 0.35)' 
+                          : isWarning 
+                            ? '1px solid rgba(245, 158, 11, 0.35)' 
+                            : '1px solid rgba(255, 255, 255, 0.05)',
+                        boxShadow: isDanger ? '0 4px 20px rgba(239, 68, 68, 0.12)' : 'none',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '0.75rem'
+                        gap: '0.85rem'
                       }}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
                           <span style={{ width: 10, height: 10, borderRadius: '50%', background: catColor }} />
                           <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.95rem' }}>
                             {budget.category}
                           </span>
-                          {isOver ? (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '0.7rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.15)', color: '#EF4444', fontWeight: 600 }}>
-                              <AlertTriangle size={11} /> Over by {formatCurrency(spent - limit)}
+                          {isDanger ? (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.72rem', padding: '2px 8px', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.2)', color: '#EF4444', fontWeight: 600, border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                              <AlertTriangle size={12} /> Over by {formatCurrency(spent - limit)} ({percentage}%)
+                            </span>
+                          ) : isWarning ? (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.72rem', padding: '2px 8px', borderRadius: '4px', background: 'rgba(245, 158, 11, 0.2)', color: '#F59E0B', fontWeight: 600, border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+                              <AlertTriangle size={12} /> {percentage}% used ({formatCurrency(limit - spent)} left)
                             </span>
                           ) : (
-                            <span style={{ fontSize: '0.7rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(16, 185, 129, 0.12)', color: '#10B981', fontWeight: 600 }}>
-                              {formatCurrency(limit - spent)} remaining
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.72rem', padding: '2px 8px', borderRadius: '4px', background: 'rgba(16, 185, 129, 0.12)', color: '#10B981', fontWeight: 600 }}>
+                              <CheckCircle2 size={12} /> {formatCurrency(limit - spent)} remaining ({Math.max(0, 100 - Math.round(percentage))}%)
                             </span>
                           )}
                         </div>
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: isOver ? '#EF4444' : 'var(--text-primary)' }}>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: isDanger ? '#EF4444' : (isWarning ? '#F59E0B' : 'var(--text-primary)') }}>
                             {formatCurrency(spent)} <span style={{ color: 'var(--text-muted)' }}>/ {formatCurrency(limit)}</span>
                           </span>
                           <button 
@@ -370,14 +433,17 @@ function BudgetsPage({ hideHeader = false }) {
                       </div>
 
                       {/* Progress Bar Container */}
-                      <div style={{ width: '100%', height: '7px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '999px', overflow: 'hidden' }}>
+                      <div style={{ width: '100%', height: '8px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '999px', overflow: 'hidden' }}>
                         <div 
                           style={{ 
                             width: `${Math.min(percentage, 100)}%`, 
                             height: '100%', 
-                            background: isOver 
+                            background: isDanger 
                               ? '#EF4444' 
-                              : `linear-gradient(90deg, ${catColor}, #22D3EE)`,
+                              : isWarning 
+                                ? 'linear-gradient(90deg, #F59E0B, #EF4444)' 
+                                : `linear-gradient(90deg, ${catColor}, #22D3EE)`,
+                            boxShadow: isDanger ? '0 0 12px rgba(239, 68, 68, 0.6)' : 'none',
                             borderRadius: '999px',
                             transition: 'width 0.4s ease'
                           }} 

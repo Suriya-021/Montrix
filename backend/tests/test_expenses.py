@@ -28,10 +28,10 @@ def test_create_and_get_expense(client, test_user):
     assert single_res.json()["id"] == expense_id
 
 def test_expense_validation_rejected(client, test_user):
-    # Invalid category
+    # Invalid category (empty string)
     bad_cat = {
         "amount": 50.0,
-        "category": "NonExistentCategory",
+        "category": "   ",
         "description": "Invalid",
         "date": str(date.today())
     }
@@ -129,3 +129,65 @@ def test_export_expenses_csv(client, test_user):
     content = res.text
     assert "Date (Transaction)" in content
     assert "Amount (INR)" in content
+
+def test_expense_filtering_sorting_and_pagination(client, test_user):
+    # Seed 5 specific expenses with varied dates, categories, descriptions, amounts
+    items_to_create = [
+        {"amount": 10.0, "category": "Food", "description": "Morning Coffee", "date": "2026-03-01"},
+        {"amount": 50.0, "category": "Food", "description": "Dinner Sushi", "date": "2026-03-10"},
+        {"amount": 200.0, "category": "Transport", "description": "Flight Ticket", "date": "2026-03-15"},
+        {"amount": 30.0, "category": "Shopping", "description": "Grocery Books", "date": "2026-04-01"},
+        {"amount": 500.0, "category": "Bills", "description": "Apartment Electricity", "date": "2026-04-15"},
+    ]
+    for item in items_to_create:
+        res = client.post("/api/expenses/", json=item, headers=test_user["headers"])
+        assert res.status_code == 200
+
+    # Test 1: Date Range Filter (March only)
+    res_range = client.get("/api/expenses/?start_date=2026-03-01&end_date=2026-03-31", headers=test_user["headers"])
+    assert res_range.status_code == 200
+    march_items = res_range.json()
+    assert all("2026-03" in x["date"] for x in march_items)
+    assert any(x["description"] == "Morning Coffee" for x in march_items)
+    assert not any(x["description"] == "Apartment Electricity" for x in march_items)
+
+    # Test 2: Category Filter
+    res_cat = client.get("/api/expenses/?category=Transport", headers=test_user["headers"])
+    assert res_cat.status_code == 200
+    transport_items = res_cat.json()
+    assert all(x["category"] == "Transport" for x in transport_items)
+    assert any(x["description"] == "Flight Ticket" for x in transport_items)
+
+    # Test 3: Search Filter
+    res_search = client.get("/api/expenses/?search=sushi", headers=test_user["headers"])
+    assert res_search.status_code == 200
+    search_items = res_search.json()
+    assert len(search_items) >= 1
+    assert any("Sushi" in x["description"] for x in search_items)
+
+    # Test 4: Sorting by Amount (Ascending)
+    res_sort_asc = client.get("/api/expenses/?sort_by=amount&sort_order=asc", headers=test_user["headers"])
+    assert res_sort_asc.status_code == 200
+    asc_items = res_sort_asc.json()
+    amounts = [x["amount"] for x in asc_items]
+    assert amounts == sorted(amounts)
+
+    # Test 5: Sorting by Amount (Descending)
+    res_sort_desc = client.get("/api/expenses/?sort_by=amount&sort_order=desc", headers=test_user["headers"])
+    assert res_sort_desc.status_code == 200
+    desc_items = res_sort_desc.json()
+    amounts_desc = [x["amount"] for x in desc_items]
+    assert amounts_desc == sorted(amounts_desc, reverse=True)
+
+    # Test 6: Pagination (page=1, page_size=2)
+    res_page = client.get("/api/expenses/?page=1&page_size=2", headers=test_user["headers"])
+    assert res_page.status_code == 200
+    page_data = res_page.json()
+    assert "items" in page_data
+    assert "total" in page_data
+    assert page_data["page"] == 1
+    assert page_data["page_size"] == 2
+    assert len(page_data["items"]) == 2
+    assert page_data["total"] >= 5
+    assert page_data["total_pages"] >= 3
+

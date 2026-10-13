@@ -11,8 +11,20 @@ export { getHeaders, BASE_URL };
 const API_URL = `${BASE_URL}/expenses`;
 
 export const expenseService = {
-  async getAll() {
-    return await apiFetch('/expenses/');
+  async getAll(params = {}) {
+    const query = new URLSearchParams();
+    if (params.startDate) query.append('start_date', params.startDate);
+    if (params.endDate) query.append('end_date', params.endDate);
+    if (params.category && params.category !== 'All') query.append('category', params.category);
+    if (params.search && params.search.trim()) query.append('search', params.search.trim());
+    if (params.sortBy) query.append('sort_by', params.sortBy);
+    if (params.sortOrder) query.append('sort_order', params.sortOrder);
+    if (params.page !== undefined && params.page !== null) query.append('page', params.page);
+    if (params.pageSize) query.append('page_size', params.pageSize);
+
+    const queryString = query.toString();
+    const endpoint = queryString ? `/expenses/?${queryString}` : '/expenses/';
+    return await apiFetch(endpoint);
   },
 
   async getStats(month) {

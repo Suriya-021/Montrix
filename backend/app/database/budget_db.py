@@ -85,3 +85,104 @@ def delete_budget(user_id: int, budget_id: int):
         return False
     finally:
         db.close()
+
+from collections import defaultdict
+from datetime import date as dt_date, datetime
+import calendar
+from app.models.all_models import Expense
+
+def get_budget_status(user_id: int, month: str = None):
+    db = SessionLocal()
+    try:
+        target_month = month if month else datetime.now().strftime("%Y-%m")
+        try:
+            year, m = map(int, target_month.split("-"))
+            _, last_day = calendar.monthrange(year, m)
+            start_date = dt_date(year, m, 1)
+            end_date = dt_date(year, m, last_day)
+        except Exception:
+            year = datetime.now().year
+            m = datetime.now().month
+            _, last_day = calendar.monthrange(year, m)
+            start_date = dt_date(year, m, 1)
+            end_date = dt_date(year, m, last_day)
+            target_month = f"{year:04d}-{m:02d}"
+
+        # Fetch budgets for this user and month
+        budgets = db.query(Budget).filter(Budget.user_id == user_id, Budget.month == target_month).all()
+
+        # Fetch expenses in that date range using indexed Date column
+        month_expenses = db.query(Expense).filter(
+            Expense.user_id == user_id,
+            Expense.date >= start_date,
+            Expense.date <= end_date
+        ).all()
+
+        # Tally spent by category
+        spent_by_category = defaultdict(float)
+        for exp in month_expenses:
+            spent_by_category[exp.category] += float(exp.amount)
+
+        category_statuses = []
+        alerts = []
+        total_budget = 0.0
+        total_spent_in_budgeted = 0.0
+
+        for b in budgets:
+            limit = float(b.limit_amount)
+            spent = spent_by_category[b.category]
+            total_budget += limit
+            total_spent_in_budgeted += spent
+            remaining = limit - spent
+            pct = round((spent / limit) * 100, 1) if limit > 0 else 0.0
+
+            if pct > 100.0:
+                cat_status = "danger"
+                alerts.append({
+                    "category": b.category,
+                    "type": "danger",
+                    "percentage": pct,
+                    "limit_amount": limit,
+                    "spent_amount": round(spent, 2),
+                    "over_amount": round(spent - limit, 2),
+                    "message": f"Exceeded {b.category} budget by {round(spent - limit, 2)} ({pct}%)"
+                })
+            elif pct >= 80.0:
+                cat_status = "warning"
+                alerts.append({
+                    "category": b.category,
+                    "type": "warning",
+                    "percentage": pct,
+                    "limit_amount": limit,
+                    "spent_amount": round(spent, 2),
+                    "over_amount": 0.0,
+                    "message": f"{b.category} is near limit ({pct}% used, {round(remaining, 2)} remaining)"
+                })
+            else:
+                cat_status = "normal"
+
+            category_statuses.append({
+                "budget_id": b.id,
+                "category": b.category,
+                "limit_amount": limit,
+                "spent_amount": round(spent, 2),
+                "remaining_amount": round(remaining, 2),
+                "percentage_used": pct,
+                "status": cat_status
+            })
+
+        overall_pct = round((total_spent_in_budgeted / total_budget) * 100, 1) if total_budget > 0 else 0.0
+        overall_status = "danger" if any(c["status"] == "danger" for c in category_statuses) else ("warning" if any(c["status"] == "warning" for c in category_statuses) else "normal")
+
+        return {
+            "month": target_month,
+            "total_budget": round(total_budget, 2),
+            "total_spent": round(total_spent_in_budgeted, 2),
+            "total_remaining": round(total_budget - total_spent_in_budgeted, 2),
+            "overall_percentage": overall_pct,
+            "overall_status": overall_status,
+            "categories": category_statuses,
+            "alerts": alerts
+        }
+    finally:
+        db.close()

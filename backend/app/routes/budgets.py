@@ -26,6 +26,14 @@ def get_budgets(month: Optional[str] = None, current_user: dict = Depends(get_cu
     user_id = current_user["id"]
     return budget_db.get_budgets(user_id, month)
 
+@router.get("/status")
+def get_budget_status(month: Optional[str] = None, current_user: dict = Depends(get_current_user)):
+    """
+    Returns live spending vs budget progress, remaining amounts, and overspending alerts.
+    """
+    user_id = current_user["id"]
+    return budget_db.get_budget_status(user_id, month)
+
 @router.get("/{budget_id}", response_model=BudgetResponse)
 def get_budget(budget_id: int, current_user: dict = Depends(get_current_user)):
     user_id = current_user["id"]

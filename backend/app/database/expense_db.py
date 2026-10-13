@@ -1,6 +1,9 @@
 
+import math
+from typing import Optional
 from app.models.all_models import Expense
 from app.database_orm import SessionLocal
+from app.database.date_utils import parse_date
 from collections import defaultdict
 
 def _expense_to_dict(e):
@@ -14,10 +17,64 @@ def _expense_to_dict(e):
         "created_at": str(e.created_at) if getattr(e, 'created_at', None) else str(e.id)
     }
 
-def get_all_expenses(user_id: int):
+def get_all_expenses(
+    user_id: int,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    category: Optional[str] = None,
+    search: Optional[str] = None,
+    sort_by: Optional[str] = "date",
+    sort_order: Optional[str] = "desc",
+    page: Optional[int] = None,
+    page_size: Optional[int] = 20
+):
     db = SessionLocal()
     try:
-        expenses = db.query(Expense).filter(Expense.user_id == user_id).order_by(Expense.date.desc()).all()
+        query = db.query(Expense).filter(Expense.user_id == user_id)
+        
+        # Date range filtering
+        if start_date:
+            parsed_start = parse_date(start_date)
+            if parsed_start:
+                query = query.filter(Expense.date >= parsed_start)
+                
+        if end_date:
+            parsed_end = parse_date(end_date)
+            if parsed_end:
+                query = query.filter(Expense.date <= parsed_end)
+                
+        # Category filtering
+        if category and category.strip() and category.lower() != 'all':
+            query = query.filter(Expense.category == category.strip())
+            
+        # Search in description
+        if search and search.strip():
+            query = query.filter(Expense.description.ilike(f"%{search.strip()}%"))
+            
+        # Multi-column sorting
+        sort_col = Expense.amount if sort_by == "amount" else Expense.date
+        if sort_order and sort_order.lower() == "asc":
+            query = query.order_by(sort_col.asc(), Expense.id.asc())
+        else:
+            query = query.order_by(sort_col.desc(), Expense.id.desc())
+            
+        # Server-side pagination
+        if page is not None:
+            total = query.count()
+            current_page = max(1, page)
+            size = max(1, min(100, page_size if page_size is not None else 20))
+            total_pages = max(1, math.ceil(total / size)) if total > 0 else 1
+            offset = (current_page - 1) * size
+            expenses = query.offset(offset).limit(size).all()
+            return {
+                "items": [_expense_to_dict(e) for e in expenses],
+                "total": total,
+                "page": current_page,
+                "page_size": size,
+                "total_pages": total_pages
+            }
+            
+        expenses = query.all()
         return [_expense_to_dict(e) for e in expenses]
     finally:
         db.close()

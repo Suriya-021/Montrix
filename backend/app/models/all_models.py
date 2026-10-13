@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Numeric, ForeignKey, DateTime, Date
+from sqlalchemy import Column, Integer, String, Numeric, ForeignKey, DateTime, Date, Boolean, UniqueConstraint
 from sqlalchemy.sql import func
 from app.database_orm import Base
 
@@ -57,3 +57,17 @@ class Income(Base):
     amount = Column(Numeric(12, 2, asdecimal=False), nullable=False)
     date = Column(Date, nullable=False, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class Category(Base):
+    __tablename__ = "categories"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
+    name = Column(String(50), nullable=False)
+    color = Column(String(20), nullable=False, default="#8B5CF6")
+    icon = Column(String(50), nullable=True, default="Tag")
+    is_default = Column(Boolean, default=False, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        UniqueConstraint('user_id', 'name', name='uq_user_category_name'),
+    )

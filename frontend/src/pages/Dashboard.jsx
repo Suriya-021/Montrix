@@ -3,7 +3,9 @@ import { expenseService } from '../services/expenseService';
 import { incomeService } from '../services/incomeService';
 import { subscriptionService } from '../services/subscriptionService';
 import { goalService } from '../services/goalService';
+import { budgetService } from '../services/budgetService';
 import { useCurrency } from '../context/CurrencyContext';
+import { Link } from 'react-router-dom';
 
 // V2 Components
 import StatCard from '../components/Cards/StatCard';
@@ -12,7 +14,7 @@ import CategoryDonut from '../components/Charts/CategoryDonut';
 import TransactionsWidget from '../components/Widgets/TransactionsWidget';
 import UpcomingBillsWidget from '../components/Widgets/UpcomingBillsWidget';
 import SavingsGoalsWidget from '../components/Widgets/SavingsGoalsWidget';
-import { Loader2, Wallet, TrendingDown, TrendingUp, PiggyBank } from 'lucide-react';
+import { Loader2, Wallet, TrendingDown, TrendingUp, PiggyBank, AlertTriangle, ArrowRight } from 'lucide-react';
 
 // Category colors for the donut chart
 const CATEGORY_COLORS = {
@@ -38,6 +40,7 @@ function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [allExpenses, setAllExpenses] = useState([]);
   const [cashFlowData, setCashFlowData] = useState([]);
+  const [budgetStatus, setBudgetStatus] = useState(null);
   
   useEffect(() => {
     loadDashboardData();
@@ -53,19 +56,21 @@ function Dashboard() {
   const loadDashboardData = async () => {
     setIsLoading(true);
     try {
-      const [statsData, expensesData, incomeData, billsData, goalsData, cfData] = await Promise.all([
+      const [statsData, expensesData, incomeData, billsData, goalsData, cfData, bStatusData] = await Promise.all([
         expenseService.getStats().catch(() => null),
         expenseService.getAll().catch(() => []),
         incomeService.getAll().catch(() => []),
         subscriptionService.getAll().catch(() => []),
         goalService.getAll().catch(() => []),
-        expenseService.getCashFlow().catch(() => [])
+        expenseService.getCashFlow().catch(() => []),
+        budgetService.getStatus().catch(() => null)
       ]);
       
       setStats(statsData);
       setAllExpenses(Array.isArray(expensesData) ? expensesData : []);
       setRecentTransactions(Array.isArray(expensesData) ? expensesData.slice(0, 5) : []);
       setCashFlowData(Array.isArray(cfData) ? cfData : []);
+      setBudgetStatus(bStatusData);
       
       const incomeArr = Array.isArray(incomeData) ? incomeData : [];
       const incomeSum = incomeArr.reduce((sum, item) => sum + (item.amount || 0), 0);
@@ -134,6 +139,72 @@ function Dashboard() {
           </p>
         </div>
       </div>
+
+      {/* Live Budget Alerts Banner */}
+      {budgetStatus?.alerts?.length > 0 && (
+        <div 
+          style={{ 
+            marginBottom: 'var(--space-6)',
+            padding: '1rem 1.25rem',
+            borderRadius: 'var(--radius-md)',
+            background: budgetStatus.alerts.some(a => a.type === 'danger') 
+              ? 'linear-gradient(90deg, rgba(239, 68, 68, 0.16), rgba(245, 158, 11, 0.06))'
+              : 'linear-gradient(90deg, rgba(245, 158, 11, 0.16), rgba(139, 92, 246, 0.06))',
+            border: budgetStatus.alerts.some(a => a.type === 'danger')
+              ? '1px solid rgba(239, 68, 68, 0.35)'
+              : '1px solid rgba(245, 158, 11, 0.35)',
+            boxShadow: budgetStatus.alerts.some(a => a.type === 'danger') ? '0 4px 20px rgba(239, 68, 68, 0.15)' : 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '1rem',
+            flexWrap: 'wrap'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ 
+              width: 36, 
+              height: 36, 
+              borderRadius: '50%', 
+              background: budgetStatus.alerts.some(a => a.type === 'danger') ? 'rgba(239, 68, 68, 0.2)' : 'rgba(245, 158, 11, 0.2)', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              color: budgetStatus.alerts.some(a => a.type === 'danger') ? '#EF4444' : '#F59E0B', 
+              flexShrink: 0 
+            }}>
+              <AlertTriangle size={18} />
+            </div>
+            <div>
+              <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.95rem' }}>
+                {budgetStatus.alerts.some(a => a.type === 'danger') ? 'Budget Limit Exceeded' : 'Budget Warning'}
+              </div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '2px' }}>
+                {budgetStatus.alerts[0].message}
+                {budgetStatus.alerts.length > 1 && ` (+${budgetStatus.alerts.length - 1} other alerts)`}
+              </div>
+            </div>
+          </div>
+          <Link 
+            to="/budgets" 
+            style={{ 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              gap: '6px', 
+              color: '#22D3EE', 
+              fontSize: '0.85rem', 
+              fontWeight: 600, 
+              textDecoration: 'none',
+              padding: '0.45rem 0.85rem',
+              background: 'rgba(34, 211, 238, 0.1)',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid rgba(34, 211, 238, 0.2)'
+            }}
+          >
+            Review Budgets <ArrowRight size={14} />
+          </Link>
+        </div>
+      )}
 
       {/* KPI Cards Row */}
       <div className="stat-grid">
