@@ -65,9 +65,9 @@ def update_budget(user_id: int, budget_id: int, budget_obj):
     try:
         budget = db.query(Budget).filter(Budget.id == budget_id, Budget.user_id == user_id).first()
         if budget:
-            if budget_obj.category is not None: budget.category = budget_obj.category
-            if budget_obj.limit_amount is not None: budget.limit_amount = budget_obj.limit_amount
-            if budget_obj.month is not None: budget.month = budget_obj.month
+            if getattr(budget_obj, 'category', None) is not None: budget.category = budget_obj.category
+            if getattr(budget_obj, 'limit_amount', None) is not None: budget.limit_amount = budget_obj.limit_amount
+            if getattr(budget_obj, 'month', None) is not None: budget.month = budget_obj.month
             db.commit()
             return True
         return False

@@ -30,10 +30,17 @@ def get_income_by_id(user_id: int, income_id: int):
     finally:
         db.close()
 
+from app.database.date_utils import parse_date
+
 def create_income(user_id: int, income_obj):
     db = SessionLocal()
     try:
-        new_income = Income(user_id=user_id, source=income_obj.source, amount=income_obj.amount, date=income_obj.date)
+        new_income = Income(
+            user_id=user_id, 
+            source=income_obj.source, 
+            amount=income_obj.amount, 
+            date=parse_date(income_obj.date)
+        )
         db.add(new_income)
         db.commit()
         db.refresh(new_income)
@@ -51,7 +58,7 @@ def update_income(user_id: int, income_id: int, income_obj):
             if income_obj.amount is not None:
                 income.amount = income_obj.amount
             if income_obj.date is not None:
-                income.date = income_obj.date
+                income.date = parse_date(income_obj.date)
             db.commit()
             return True
         return False

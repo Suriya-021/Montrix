@@ -31,6 +31,8 @@ def get_goal_by_id(user_id: int, goal_id: int):
     finally:
         db.close()
 
+from app.database.date_utils import parse_date
+
 def create_goal(user_id: int, goal_obj):
     db = SessionLocal()
     try:
@@ -40,7 +42,7 @@ def create_goal(user_id: int, goal_obj):
             user_id=user_id, 
             title=goal_obj.title, 
             target_amount=goal_obj.target_amount, 
-            target_date=goal_obj.target_date, 
+            target_date=parse_date(goal_obj.target_date), 
             current_amount=initial_amount
         )
         db.add(new_goal)
@@ -57,7 +59,7 @@ def update_goal(user_id: int, goal_id: int, goal_obj):
         if goal:
             if getattr(goal_obj, 'title', None) is not None: goal.title = goal_obj.title
             if getattr(goal_obj, 'target_amount', None) is not None: goal.target_amount = goal_obj.target_amount
-            if getattr(goal_obj, 'target_date', None) is not None: goal.target_date = goal_obj.target_date
+            if getattr(goal_obj, 'target_date', None) is not None: goal.target_date = parse_date(goal_obj.target_date)
             if getattr(goal_obj, 'current_amount', None) is not None: goal.current_amount = goal_obj.current_amount
             db.commit()
             return True

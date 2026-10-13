@@ -31,10 +31,18 @@ def get_subscription_by_id(user_id: int, sub_id: int):
     finally:
         db.close()
 
+from app.database.date_utils import parse_date
+
 def create_subscription(user_id: int, sub_obj):
     db = SessionLocal()
     try:
-        new_sub = Subscription(user_id=user_id, title=sub_obj.title, amount=sub_obj.amount, frequency=sub_obj.frequency, next_due_date=sub_obj.next_due_date)
+        new_sub = Subscription(
+            user_id=user_id, 
+            title=sub_obj.title, 
+            amount=sub_obj.amount, 
+            frequency=sub_obj.frequency, 
+            next_due_date=parse_date(sub_obj.next_due_date)
+        )
         db.add(new_sub)
         db.commit()
         db.refresh(new_sub)
@@ -54,7 +62,7 @@ def update_subscription(user_id: int, sub_id: int, sub_obj):
             if sub_obj.frequency is not None:
                 sub.frequency = sub_obj.frequency
             if sub_obj.next_due_date is not None:
-                sub.next_due_date = sub_obj.next_due_date
+                sub.next_due_date = parse_date(sub_obj.next_due_date)
             db.commit()
             return True
         return False

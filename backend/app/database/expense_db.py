@@ -32,10 +32,18 @@ def get_expense_by_id(expense_id: int, user_id: int):
     finally:
         db.close()
 
+from app.database.date_utils import parse_date
+
 def create_expense(user_id: int, amount: float, category: str, description: str, date: str):
     db = SessionLocal()
     try:
-        new_expense = Expense(user_id=user_id, amount=amount, category=category, description=description, date=date)
+        new_expense = Expense(
+            user_id=user_id, 
+            amount=amount, 
+            category=category, 
+            description=description, 
+            date=parse_date(date)
+        )
         db.add(new_expense)
         db.commit()
         db.refresh(new_expense)
@@ -63,7 +71,7 @@ def update_expense(expense_id: int, user_id: int, amount: float, category: str, 
             expense.amount = amount
             expense.category = category
             expense.description = description
-            expense.date = date
+            expense.date = parse_date(date)
             db.commit()
             return True
         return False
