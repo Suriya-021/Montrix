@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from app.database_orm import engine, Base
+import app.models.all_models
 
 from app.routes.expenses import router as expenses_router
 from app.routes.budgets import router as budgets_router

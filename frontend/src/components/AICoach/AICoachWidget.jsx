@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Loader2, AlertCircle } from 'lucide-react';
-import { getHeaders } from '../../services/expenseService';
+import { apiFetch } from '../../services/api';
 
 function AICoachWidget() {
   const [insights, setInsights] = useState([]);
@@ -10,20 +10,11 @@ function AICoachWidget() {
   useEffect(() => {
     const fetchInsights = async () => {
       try {
-        const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-        const response = await fetch(`${BASE_URL}/insights/coach`, {
-          headers: getHeaders()
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch AI insights');
-        }
-        
-        const data = await response.json();
+        const data = await apiFetch('/insights/coach');
         setInsights(data.insights || []);
       } catch (err) {
         console.error(err);
-        setError("AI Coach is currently sleeping. We'll have tips for you soon!");
+        setError("AI Coach is currently quiet. Keep tracking your spending to receive customized tips!");
       } finally {
         setIsLoading(false);
       }

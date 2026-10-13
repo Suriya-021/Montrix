@@ -33,7 +33,6 @@ const SpendingHeatmap = () => {
   const { grid, months, maxSpend, totalYearSpend } = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const currentYear = today.getFullYear();
 
     // Map expenses by date string 'YYYY-MM-DD'
     const expenseMap = {};
@@ -47,17 +46,15 @@ const SpendingHeatmap = () => {
       });
     }
 
-    // Find the Sunday on or before Jan 1st
-    const startDate = new Date(currentYear, 0, 1);
-    startDate.setDate(startDate.getDate() - startDate.getDay());
-
-    // Find the Saturday on or after Dec 31st
-    const endDate = new Date(currentYear, 11, 31);
-    endDate.setDate(endDate.getDate() + (6 - endDate.getDay()));
-
-    // Calculate total columns (weeks)
-    const numCols = Math.round((endDate - startDate) / (7 * 24 * 60 * 60 * 1000));
+    // We want 52 columns of 7 days
+    const numCols = 52;
     const numRows = 7;
+    const todayDayOfWeek = today.getDay(); // 0 is Sunday, 6 is Saturday
+
+    // Start date is exactly 52 weeks ago, plus an offset to start on a Sunday
+    // For example, if today is Wednesday (3), the start date is 51 weeks + 3 days ago
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - ((numCols - 1) * 7) - todayDayOfWeek);
 
     const newGrid = [];
     const newMonths = [];
@@ -77,22 +74,17 @@ const SpendingHeatmap = () => {
         const dateStr = `${year}-${m}-${d}`;
         
         const isFuture = currentDate > today;
-        // Only count amounts for the current year
-        const isCurrentYear = year === currentYear;
-        const amount = (isFuture || !isCurrentYear) ? 0 : (expenseMap[dateStr] || 0);
+        const amount = isFuture ? 0 : (expenseMap[dateStr] || 0);
         
-        if (amount > 0) {
+        if (!isFuture && amount > 0) {
           totalSpent += amount;
           if (amount > max) max = amount;
         }
         
-        // Track months for the header. Only track if it's the 1st of the month or the first week of the year
+        // Track months for the header
         if (r === 0) {
           const monthIndex = currentDate.getMonth();
-          if (monthIndex !== currentMonth && currentDate.getFullYear() === currentYear) {
-            // For January, sometimes the first week is mostly in December. 
-            // We'll push the month if the current date is in this month, 
-            // or if it's the very first column and we haven't pushed Jan yet.
+          if (monthIndex !== currentMonth) {
             newMonths.push({
               index: c, // the column index this month starts
               name: currentDate.toLocaleString('default', { month: 'short' })
@@ -105,14 +97,13 @@ const SpendingHeatmap = () => {
           date: currentDate,
           dateStr: dateStr,
           amount: amount,
-          isFuture: isFuture,
-          isCurrentYear: isCurrentYear
+          isFuture: isFuture
         });
       }
       newGrid.push(col);
     }
     
-    return { grid: newGrid, months: newMonths, maxSpend: max, totalYearSpend: totalSpent, currentYear };
+    return { grid: newGrid, months: newMonths, maxSpend: max, totalYearSpend: totalSpent };
   }, [expenses]);
 
   // Determine intensity level (0-4) based on quartiles or simple buckets
@@ -144,15 +135,21 @@ const SpendingHeatmap = () => {
       <div className="heatmap-container">
         {/* Months Row */}
         <div className="heatmap-months">
-          {months.map((m, i) => (
-            <div 
-              key={i} 
-              className="heatmap-month-label"
-              style={{ left: `${m.index * 13}px` }}
-            >
-              {m.name}
-            </div>
-          ))}
+          {months.map((m, i) => {
+            // Calculate left margin based on column index difference
+            const prevColIndex = i === 0 ? 0 : months[i-1].index;
+            const diffCols = m.index - prevColIndex;
+            // 13px per column (10px width + 3px gap)
+            return (
+              <div 
+                key={i} 
+                className="heatmap-month-label"
+                style={{ width: `${(i === 0 ? m.index : diffCols) * 13}px` }}
+              >
+                {m.name}
+              </div>
+            );
+          })}
         </div>
         
         {/* Grid Area with Y-axis */}
@@ -168,7 +165,7 @@ const SpendingHeatmap = () => {
                 {col.map((day, rIdx) => (
                   <div 
                     key={rIdx} 
-                    className={`heatmap-cell ${(day.isFuture || !day.isCurrentYear) ? 'is-future' : ''}`}
+                    className={`heatmap-cell ${day.isFuture ? 'is-future' : ''}`}
                     data-level={getLevel(day.amount)}
                     title={`${day.date.toDateString()}: ${formatCurrency(day.amount)}`}
                   />
@@ -181,7 +178,7 @@ const SpendingHeatmap = () => {
       
       <div className="heatmap-footer">
         <div>
-          <span>{formatCurrency(totalYearSpend)} spent in {currentYear}</span>
+          <span>{formatCurrency(totalYearSpend)} spent in the last year</span>
         </div>
         
         <div className="heatmap-legend">

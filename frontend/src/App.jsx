@@ -1,4 +1,4 @@
-import React, { useState, Suspense, lazy } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Sidebar from './components/Sidebar/Sidebar';
 import TopNavbar from './components/TopNavbar/TopNavbar';
@@ -17,6 +17,8 @@ const Expenses = lazy(() => import('./pages/Expenses'));
 const Planning = lazy(() => import('./pages/PlanningPage'));
 const Subscriptions = lazy(() => import('./pages/SubscriptionsPage'));
 const Income = lazy(() => import('./pages/IncomePage'));
+import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
+
 const Analytics = lazy(() => import('./pages/AnalyticsPage'));
 const SettingsPage = lazy(() => import('./pages/Settings/SettingsPage'));
 
@@ -37,27 +39,29 @@ const ProtectedLayout = ({ handleAddExpense, toast, setToast, showModal, setShow
 
       <main className="main-content">
         <div className="main-content__inner">
-          <Suspense fallback={
-            <div className="empty-state" style={{ height: '50vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-              <Loader2 className="empty-state__icon" style={{ animation: 'spin 1s linear infinite' }} />
-            </div>
-          }>
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/expenses" element={<Expenses />} />
-              <Route path="/income" element={<Income />} />
-              <Route path="/planning" element={<Planning />} />
-              <Route path="/subscriptions" element={<Subscriptions />} />
-              <Route path="/analytics" element={<Analytics />} />
-              <Route path="/settings" element={<SettingsPage />} />
-              <Route path="*" element={
-                <div className="empty-state">
-                  <h3 className="empty-state__title">404 - Page Not Found</h3>
-                  <p className="empty-state__text">The page you are looking for doesn't exist.</p>
-                </div>
-              } />
-            </Routes>
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense fallback={
+              <div className="empty-state" style={{ height: '50vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <Loader2 className="empty-state__icon" style={{ animation: 'spin 1s linear infinite' }} />
+              </div>
+            }>
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/expenses" element={<Expenses />} />
+                <Route path="/income" element={<Income />} />
+                <Route path="/planning" element={<Planning />} />
+                <Route path="/subscriptions" element={<Subscriptions />} />
+                <Route path="/analytics" element={<Analytics />} />
+                <Route path="/settings" element={<SettingsPage />} />
+                <Route path="*" element={
+                  <div className="empty-state">
+                    <h3 className="empty-state__title">404 - Page Not Found</h3>
+                    <p className="empty-state__text">The page you are looking for doesn't exist.</p>
+                  </div>
+                } />
+              </Routes>
+            </Suspense>
+          </ErrorBoundary>
         </div>
       </main>
       
@@ -78,6 +82,18 @@ function App() {
   const [showModal, setShowModal] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
   
+  useEffect(() => {
+    const handleAuthExpired = (e) => {
+      setToast({
+        show: true,
+        message: e?.detail?.message || 'Session expired. Please log in again.',
+        type: 'error'
+      });
+    };
+    window.addEventListener('authUnauthorized', handleAuthExpired);
+    return () => window.removeEventListener('authUnauthorized', handleAuthExpired);
+  }, []);
+
   const handleAddExpense = () => setShowModal(true);
 
   const handleSaveExpense = async (expenseData) => {
@@ -94,25 +110,27 @@ function App() {
 
   return (
     <Router>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        
-        {/* Protected Routes Wrapper */}
-        <Route path="/*" element={
-          <ProtectedRoute>
-            <ProtectedLayout 
-              handleAddExpense={handleAddExpense}
-              toast={toast}
-              setToast={setToast}
-              showModal={showModal}
-              setShowModal={setShowModal}
-              handleSaveExpense={handleSaveExpense}
-            />
-          </ProtectedRoute>
-        } />
-      </Routes>
+      <ErrorBoundary>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          
+          {/* Protected Routes Wrapper */}
+          <Route path="/*" element={
+            <ProtectedRoute>
+              <ProtectedLayout 
+                handleAddExpense={handleAddExpense}
+                toast={toast}
+                setToast={setToast}
+                showModal={showModal}
+                setShowModal={setShowModal}
+                handleSaveExpense={handleSaveExpense}
+              />
+            </ProtectedRoute>
+          } />
+        </Routes>
+      </ErrorBoundary>
     </Router>
   );
 }

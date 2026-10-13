@@ -32,5 +32,7 @@ def delete_expense(expense_id: int, user_id: int):
         raise HTTPException(status_code=404, detail="Expense not found")
     return {"message": "Expense deleted successfully"}
 
-def get_expense_stats(user_id: int):
-    return expense_db.get_expense_stats(user_id)
+from typing import Optional
+
+def get_expense_stats(user_id: int, month: Optional[str] = None):
+    return expense_db.get_expense_stats(user_id, month=month)

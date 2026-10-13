@@ -70,21 +70,44 @@ def update_expense(expense_id: int, user_id: int, amount: float, category: str, 
     finally:
         db.close()
 
-def get_expense_stats(user_id: int):
+from datetime import datetime
+from typing import Optional
+
+def get_expense_stats(user_id: int, month: Optional[str] = None):
     db = SessionLocal()
     try:
-        expenses = db.query(Expense).filter(Expense.user_id == user_id).all()
-        total_expenses = sum(e.amount for e in expenses)
+        all_expenses = db.query(Expense).filter(Expense.user_id == user_id).all()
+        total_all_time = sum(e.amount for e in all_expenses)
         
-        # Calculate category breakdown
+        target_month = month if month else datetime.now().strftime("%Y-%m")
+        
+        # Filter for the target month (expenses where date starts with 'YYYY-MM')
+        month_expenses = [
+            e for e in all_expenses 
+            if e.date and str(e.date).startswith(target_month)
+        ]
+        month_spent = sum(e.amount for e in month_expenses)
+        
+        # Calculate category breakdown for the target month
         cat_totals = defaultdict(float)
-        for e in expenses:
+        for e in month_expenses:
             cat_totals[e.category] += e.amount
             
-        breakdown = [{"name": cat, "value": val} for cat, val in cat_totals.items()]
+        breakdown = [{"name": cat, "value": round(val, 2)} for cat, val in cat_totals.items()]
+        
+        # If no expenses in target month but all_time exists and month wasn't explicitly requested,
+        # fallback to all_time breakdown for dashboard donut chart
+        if not breakdown and not month and all_expenses:
+            all_cat_totals = defaultdict(float)
+            for e in all_expenses:
+                all_cat_totals[e.category] += e.amount
+            breakdown = [{"name": cat, "value": round(val, 2)} for cat, val in all_cat_totals.items()]
         
         return {
-            "total_spent": total_expenses,
+            "total_spent": round(total_all_time, 2),
+            "month": target_month,
+            "month_spent": round(month_spent, 2),
+            "this_month_spent": round(month_spent, 2),
             "category_breakdown": breakdown,
             "total_budget": 0.0,
             "budget_used_percentage": 0.0

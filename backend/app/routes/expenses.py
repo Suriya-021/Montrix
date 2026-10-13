@@ -14,9 +14,11 @@ router = APIRouter(prefix="/api/expenses", tags=["Expenses"])
 def get_all_expenses(current_user: dict = Depends(get_current_user)):
     return expense_service.get_all_expenses(current_user['id'])
 
+from typing import Optional
+
 @router.get("/stats")
-def get_stats(current_user: dict = Depends(get_current_user)):
-    return expense_service.get_expense_stats(current_user['id'])
+def get_stats(month: Optional[str] = None, current_user: dict = Depends(get_current_user)):
+    return expense_service.get_expense_stats(current_user['id'], month=month)
 
 from datetime import datetime
 

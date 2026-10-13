@@ -9,12 +9,22 @@ load_dotenv()
 # Once it's tested, we just change this URL to: postgresql://user:pass@localhost/dbname
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./spendwise.db")
 
-# For SQLite, check_same_thread=False is needed. Postgres doesn't need this.
-connect_args = {"check_same_thread": False} if SQLALCHEMY_DATABASE_URL.startswith("sqlite") else {}
+is_sqlite = SQLALCHEMY_DATABASE_URL.startswith("sqlite")
 
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args=connect_args
-)
+if is_sqlite:
+    engine_kwargs = {
+        "connect_args": {"check_same_thread": False},
+        "pool_pre_ping": True
+    }
+else:
+    engine_kwargs = {
+        "pool_pre_ping": True,
+        "pool_recycle": 300,
+        "pool_size": 10,
+        "max_overflow": 20
+    }
+
+engine = create_engine(SQLALCHEMY_DATABASE_URL, **engine_kwargs)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

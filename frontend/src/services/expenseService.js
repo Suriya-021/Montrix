@@ -1,111 +1,47 @@
 /**
  * Expense Service
  * 
- * This file handles all the communication (API calls) between our React frontend
- * and our FastAPI backend for anything related to expenses.
- * 
- * Using a separate service file keeps our React components clean and makes
- * it easier to update the API logic in one place.
+ * Centralized API service for expenses using our hardened apiFetch client.
  */
 
-// The base URL for our FastAPI backend
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-const API_URL = `${BASE_URL}/expenses`;
+import { apiFetch, getHeaders, BASE_URL } from './api';
 
-// Helper function to get the current token and format the headers
-export function getHeaders() {
-  const token = localStorage.getItem('token');
-  return {
-    'Content-Type': 'application/json',
-    'Authorization': token ? `Bearer ${token}` : ''
-  };
-}
+export { getHeaders, BASE_URL };
+
+const API_URL = `${BASE_URL}/expenses`;
 
 export const expenseService = {
   async getAll() {
-    try {
-      const response = await fetch(API_URL, { headers: getHeaders() });
-      if (!response.ok) throw new Error('Failed to fetch expenses');
-      return await response.json();
-    } catch (error) {
-      console.error("Error fetching expenses:", error);
-      throw error;
-    }
+    return await apiFetch('/expenses/');
   },
 
-  async getStats() {
-    try {
-      const response = await fetch(`${API_URL}/stats`, { headers: getHeaders() });
-      if (!response.ok) throw new Error('Failed to fetch stats');
-      return await response.json();
-    } catch (error) {
-      console.error("Error fetching stats:", error);
-      throw error;
-    }
+  async getStats(month) {
+    const endpoint = month ? `/expenses/stats?month=${encodeURIComponent(month)}` : '/expenses/stats';
+    return await apiFetch(endpoint);
   },
 
   async getCashFlow() {
-    try {
-      const response = await fetch(`${BASE_URL}/insights/cashflow`, { headers: getHeaders() });
-      if (!response.ok) throw new Error('Failed to fetch cash flow data');
-      return await response.json();
-    } catch (error) {
-      console.error("Error fetching cash flow data:", error);
-      throw error;
-    }
+    return await apiFetch('/insights/cashflow');
   },
 
   async create(expenseData) {
-    try {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify(expenseData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || 'Failed to create expense');
-      }
-      return await response.json();
-    } catch (error) {
-      console.error("Error creating expense:", error);
-      throw error;
-    }
+    return await apiFetch('/expenses/', {
+      method: 'POST',
+      body: JSON.stringify(expenseData),
+    });
   },
 
   async update(id, expenseData) {
-    try {
-      const response = await fetch(`${API_URL}/${id}`, {
-        method: 'PUT',
-        headers: getHeaders(),
-        body: JSON.stringify(expenseData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || 'Failed to update expense');
-      }
-      return await response.json();
-    } catch (error) {
-      console.error(`Error updating expense ${id}:`, error);
-      throw error;
-    }
+    return await apiFetch(`/expenses/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(expenseData),
+    });
   },
 
   async delete(id) {
-    try {
-      const response = await fetch(`${API_URL}/${id}`, {
-        method: 'DELETE',
-        headers: getHeaders(),
-      });
-
-      if (!response.ok) throw new Error('Failed to delete expense');
-      return true;
-    } catch (error) {
-      console.error(`Error deleting expense ${id}:`, error);
-      throw error;
-    }
+    return await apiFetch(`/expenses/${id}`, {
+      method: 'DELETE',
+    });
   },
 
   async exportCSV() {

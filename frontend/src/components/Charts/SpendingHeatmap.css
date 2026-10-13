@@ -40,16 +40,14 @@
 }
 
 .heatmap-months {
-  position: relative;
-  height: 15px;
-  margin-left: 32px; /* space for Y-axis labels and gap */
+  display: flex;
+  margin-left: 32px; /* space for day labels */
   font-size: 0.75rem;
   color: var(--text-muted);
 }
 
 .heatmap-month-label {
-  position: absolute;
-  top: 0;
+  flex-shrink: 0;
   text-align: left;
 }
 
