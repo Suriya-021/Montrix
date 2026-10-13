@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
-from app.schemas.user import UserRegister, UserLogin, UserResponse, TokenResponse
+from app.schemas.user import UserRegister, UserLogin, UserProfileUpdate, PasswordChange, UserResponse, TokenResponse
 from app.services import auth_service
 
 router = APIRouter()
@@ -26,4 +26,21 @@ def get_me(current_user: dict = Depends(auth_service.get_current_user)):
     Get the currently logged-in user's profile.
     This is a PROTECTED route requiring a valid JWT token.
     """
-    return current_user
+    fresh_user = auth_service.user_db.get_user_by_id(current_user['id'])
+    return fresh_user or current_user
+
+@router.put("/me", response_model=UserResponse)
+@router.put("/profile", response_model=UserResponse)
+def update_profile(profile_data: UserProfileUpdate, current_user: dict = Depends(auth_service.get_current_user)):
+    """Update user's name and/or email address."""
+    return auth_service.update_user_profile(current_user['id'], profile_data)
+
+@router.post("/change-password")
+def change_password(data: PasswordChange, current_user: dict = Depends(auth_service.get_current_user)):
+    """Change the user's password securely."""
+    return auth_service.change_password(current_user['id'], data)
+
+@router.delete("/me")
+def delete_account(current_user: dict = Depends(auth_service.get_current_user)):
+    """Permanently delete user account and all associated financial records."""
+    return auth_service.delete_account(current_user['id'])

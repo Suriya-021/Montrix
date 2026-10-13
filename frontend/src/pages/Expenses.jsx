@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Trash2, Receipt, AlertCircle, Loader2, Pencil, 
-  Search, TrendingDown, Calendar, Tag, Download,
+  Search, TrendingDown, Calendar, Tag, Download, Upload,
   ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown,
   Filter, SlidersHorizontal
 } from 'lucide-react';
 import { expenseService } from '../services/expenseService';
 import { categoryService } from '../services/categoryService';
 import AddExpenseModal from '../components/AddExpenseModal/AddExpenseModal';
+import ImportExpensesModal from '../components/ImportExpensesModal/ImportExpensesModal';
 import Toast from '../components/Toast/Toast';
 import { useCurrency } from '../context/CurrencyContext';
 
@@ -97,6 +98,7 @@ function Expenses() {
 
   // Modal & Toast
   const [editingExpense, setEditingExpense] = useState(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
 
   // Initial load for categories & global stats
@@ -238,6 +240,18 @@ function Expenses() {
     } else {
       setToast({ show: true, message: 'Export functionality not available', type: 'error' });
     }
+  };
+
+  const handleImportSuccess = (result) => {
+    const imported = result.imported_count || 0;
+    const skipped = result.skipped_count || 0;
+    setToast({
+      show: true,
+      message: `Successfully imported ${imported} transactions${skipped > 0 ? ` (${skipped} duplicates skipped)` : ''}!`,
+      type: 'success'
+    });
+    loadExpenses();
+    loadCategoriesAndStats();
   };
 
   const formatDate = (dateString) => {
@@ -589,10 +603,16 @@ function Expenses() {
           <h1 className="page-title">Expenses</h1>
           <p className="expenses-subtitle">Track, filter, and audit your financial transactions</p>
         </div>
-        <button className="btn btn--secondary" onClick={handleExportCSV}>
-          <Download size={18} style={{ marginRight: '8px' }} />
-          Export CSV
-        </button>
+        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+          <button className="btn btn--secondary" onClick={() => setIsImportModalOpen(true)}>
+            <Upload size={18} style={{ marginRight: '8px' }} />
+            Import CSV
+          </button>
+          <button className="btn btn--secondary" onClick={handleExportCSV}>
+            <Download size={18} style={{ marginRight: '8px' }} />
+            Export CSV
+          </button>
+        </div>
       </div>
 
       {/* Summary KPI Cards */}
@@ -968,6 +988,13 @@ function Expenses() {
         onClose={() => setEditingExpense(null)}
         onAdd={handleSaveEdit}
         expenseToEdit={editingExpense}
+      />
+
+      {/* CSV Bank Statement Importer Modal */}
+      <ImportExpensesModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImportSuccess={handleImportSuccess}
       />
     </div>
   );

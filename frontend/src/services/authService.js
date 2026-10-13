@@ -1,8 +1,10 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+import { apiFetch, BASE_URL } from './api';
+
+const API_URL = `${BASE_URL}/auth`;
 
 export const authService = {
   async register(name, email, password) {
-    const response = await fetch(`${API_URL}/auth/register`, {
+    const response = await fetch(`${API_URL}/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, password })
@@ -17,12 +19,11 @@ export const authService = {
   },
 
   async login(email, password) {
-    // FastAPI's OAuth2PasswordRequestForm requires x-www-form-urlencoded format
     const formData = new URLSearchParams();
-    formData.append('username', email); // FastAPI calls it username
+    formData.append('username', email);
     formData.append('password', password);
 
-    const response = await fetch(`${API_URL}/auth/login`, {
+    const response = await fetch(`${API_URL}/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -35,17 +36,40 @@ export const authService = {
       throw new Error(errorData.detail || 'Login failed');
     }
 
-    return response.json(); // returns { access_token, token_type }
+    return response.json();
   },
 
   async getMe(token) {
-    const response = await fetch(`${API_URL}/auth/me`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
+    if (token) {
+      const response = await fetch(`${API_URL}/me`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error('Failed to fetch profile');
+      return response.json();
+    }
+    return await apiFetch('/auth/me');
+  },
 
-    if (!response.ok) throw new Error('Failed to fetch profile');
-    return response.json();
+  async updateProfile(profileData) {
+    return await apiFetch('/auth/me', {
+      method: 'PUT',
+      body: JSON.stringify(profileData),
+    });
+  },
+
+  async changePassword({ currentPassword, newPassword }) {
+    return await apiFetch('/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({
+        current_password: currentPassword,
+        new_password: newPassword
+      }),
+    });
+  },
+
+  async deleteAccount() {
+    return await apiFetch('/auth/me', {
+      method: 'DELETE',
+    });
   }
 };

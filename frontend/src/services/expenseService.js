@@ -82,5 +82,32 @@ export const expenseService = {
       console.error('Error exporting expenses:', error);
       throw error;
     }
+  },
+
+  async previewCSV(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    return await apiFetch('/expenses/import/preview', {
+      method: 'POST',
+      body: formData,
+    });
+  },
+
+  async processCSV(file, mapping) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('date_col', mapping.dateCol);
+    formData.append('description_col', mapping.descriptionCol);
+    formData.append('amount_col', mapping.amountCol);
+    if (mapping.categoryCol) {
+      formData.append('category_col', mapping.categoryCol);
+    }
+    formData.append('default_category', mapping.defaultCategory || 'Other');
+    formData.append('skip_duplicates', mapping.skipDuplicates !== false ? 'true' : 'false');
+
+    return await apiFetch('/expenses/import/process', {
+      method: 'POST',
+      body: formData,
+    });
   }
 };

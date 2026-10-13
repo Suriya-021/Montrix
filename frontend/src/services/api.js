@@ -19,6 +19,9 @@ export async function apiFetch(endpoint, options = {}) {
     : `${BASE_URL}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
   
   const headers = getHeaders(options.headers || {});
+  if (options.body instanceof FormData) {
+    delete headers['Content-Type'];
+  }
   const config = {
     ...options,
     headers,

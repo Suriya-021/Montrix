@@ -92,3 +92,53 @@ def test_multi_tenant_subscription_isolation(client, test_user, second_user):
     # second_user cannot access or delete it
     assert client.get(f"/api/subscriptions/{sub_id}", headers=second_user["headers"]).status_code == 404
     assert client.delete(f"/api/subscriptions/{sub_id}", headers=second_user["headers"]).status_code == 404
+
+def test_pay_subscription_and_advance_cycle(client, test_user):
+    # 1. Create a subscription
+    create_res = client.post("/api/subscriptions/", json={
+        "title": "Disney+ Hotstar",
+        "amount": 299.0,
+        "frequency": "Monthly",
+        "next_due_date": "2026-10-15"
+    }, headers=test_user["headers"])
+    assert create_res.status_code == 201
+    sub_id = create_res.json()["id"]
+
+    # 2. Pay subscription (One-click log to expense)
+    pay_res = client.post(f"/api/subscriptions/{sub_id}/pay", headers=test_user["headers"])
+    assert pay_res.status_code == 200
+    pay_data = pay_res.json()
+    assert pay_data["new_due_date"] == "2026-11-15"
+    expense_id = pay_data["expense_id"]
+
+    # 3. Check the logged expense in expenses list
+    exp_res = client.get(f"/api/expenses/{expense_id}", headers=test_user["headers"])
+    assert exp_res.status_code == 200
+    exp = exp_res.json()
+    assert exp["amount"] == 299.0
+    assert exp["category"] == "Bills"
+    assert "Disney+ Hotstar" in exp["description"]
+
+def test_due_subscriptions_and_batch_processing(client, test_user):
+    # 1. Create an overdue subscription
+    create_res = client.post("/api/subscriptions/", json={
+        "title": "AWS Cloud Hosting",
+        "amount": 1250.0,
+        "frequency": "Monthly",
+        "next_due_date": "2026-01-01"
+    }, headers=test_user["headers"])
+    assert create_res.status_code == 201
+
+    # 2. Query due subscriptions
+    due_res = client.get("/api/subscriptions/due", headers=test_user["headers"])
+    assert due_res.status_code == 200
+    due_list = due_res.json()
+    assert any(s["title"] == "AWS Cloud Hosting" for s in due_list)
+
+    # 3. Batch process due subscriptions
+    process_res = client.post("/api/subscriptions/process-due", headers=test_user["headers"])
+    assert process_res.status_code == 200
+    result = process_res.json()
+    assert result["processed_count"] >= 1
+    assert result["total_amount"] >= 1250.0
+

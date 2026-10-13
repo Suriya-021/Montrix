@@ -11,7 +11,10 @@ import {
   AlertCircle,
   CreditCard,
   Clock,
-  Sparkles
+  Sparkles,
+  CheckCircle2,
+  Zap,
+  ArrowRight
 } from 'lucide-react';
 
 const FREQUENCIES = ['Monthly', 'Yearly', 'Weekly', 'Quarterly'];
@@ -28,7 +31,11 @@ function SubscriptionsPage() {
   const [frequency, setFrequency] = useState('Monthly');
   const [nextDueDate, setNextDueDate] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Action loading states
   const [deletingId, setDeletingId] = useState(null);
+  const [payingId, setPayingId] = useState(null);
+  const [isProcessingDue, setIsProcessingDue] = useState(false);
 
   useEffect(() => {
     loadSubscriptions();
@@ -80,6 +87,46 @@ function SubscriptionsPage() {
     }
   };
 
+  const handlePaySubscription = async (sub) => {
+    try {
+      setPayingId(sub.id);
+      const res = await subscriptionService.pay(sub.id);
+      setToast({ 
+        show: true, 
+        message: `Logged ${sub.title} to expenses! Advanced next due date to ${res.new_due_date}.`, 
+        type: 'success' 
+      });
+      window.dispatchEvent(new Event('expenseDataChanged'));
+      loadSubscriptions();
+    } catch (err) {
+      setToast({ show: true, message: err.message || 'Failed to process payment.', type: 'error' });
+    } finally {
+      setPayingId(null);
+    }
+  };
+
+  const handleProcessAllDue = async () => {
+    try {
+      setIsProcessingDue(true);
+      const res = await subscriptionService.processAllDue();
+      if (res.processed_count > 0) {
+        setToast({ 
+          show: true, 
+          message: `Processed ${res.processed_count} due bills totaling ${formatCurrency(res.total_amount)}!`, 
+          type: 'success' 
+        });
+        window.dispatchEvent(new Event('expenseDataChanged'));
+        loadSubscriptions();
+      } else {
+        setToast({ show: true, message: 'No bills currently due for processing.', type: 'info' });
+      }
+    } catch (err) {
+      setToast({ show: true, message: err.message || 'Failed to process due bills.', type: 'error' });
+    } finally {
+      setIsProcessingDue(false);
+    }
+  };
+
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to remove this recurring bill?')) return;
     
@@ -116,6 +163,9 @@ function SubscriptionsPage() {
     return sum + val;
   }, 0);
 
+  const dueBills = subscriptions.filter(sub => getDaysUntilDue(sub.next_due_date) <= 0);
+  const dueTotal = dueBills.reduce((sum, sub) => sum + (Number(sub.amount) || 0), 0);
+
   const dueSoonCount = subscriptions.filter(sub => {
     const days = getDaysUntilDue(sub.next_due_date);
     return days >= 0 && days <= 7;
@@ -145,10 +195,63 @@ function SubscriptionsPage() {
         <div>
           <h1 className="page-title" style={{ fontSize: '1.75rem' }}>Subscriptions & Recurring</h1>
           <p style={{ color: 'var(--text-muted)', marginTop: 'var(--space-1)', fontSize: '0.9rem' }}>
-            Monitor automated charges, upcoming renewals, and fixed commitments.
+            Monitor automated charges, upcoming renewals, and auto-log recurring payments.
           </p>
         </div>
       </div>
+
+      {/* Due Bills Alert Banner */}
+      {dueBills.length > 0 && (
+        <div 
+          className="glass-card" 
+          style={{ 
+            marginBottom: 'var(--space-6)',
+            padding: 'var(--space-4) var(--space-5)',
+            background: 'linear-gradient(90deg, rgba(239, 68, 68, 0.15), rgba(245, 158, 11, 0.15))',
+            border: '1px solid rgba(239, 68, 68, 0.35)',
+            borderRadius: 'var(--radius-lg)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 'var(--space-3)'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#EF4444' }}>
+              <AlertCircle size={20} />
+            </div>
+            <div>
+              <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.95rem' }}>
+                {dueBills.length} {dueBills.length === 1 ? 'Bill is' : 'Bills are'} Due for Payment
+              </div>
+              <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                Total amount pending: <strong style={{ color: '#EF4444' }}>{formatCurrency(dueTotal)}</strong>
+              </div>
+            </div>
+          </div>
+
+          <button 
+            className="btn"
+            onClick={handleProcessAllDue}
+            disabled={isProcessingDue}
+            style={{ 
+              backgroundColor: '#EF4444', 
+              color: '#fff', 
+              fontWeight: 600,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.5rem 1rem',
+              borderRadius: 'var(--radius-md)',
+              boxShadow: '0 4px 14px rgba(239, 68, 68, 0.3)'
+            }}
+          >
+            {isProcessingDue ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Zap size={16} />}
+            Auto-Log All Due Bills
+          </button>
+        </div>
+      )}
 
       {/* KPI Stats Grid */}
       <div className="stat-grid" style={{ marginBottom: 'var(--space-6)' }}>
@@ -303,12 +406,13 @@ function SubscriptionsPage() {
               <div className="empty-state" style={{ padding: '3rem 1rem', textAlign: 'center' }}>
                 <Sparkles size={36} style={{ color: 'var(--accent-primary)', marginBottom: '1rem', opacity: 0.8 }} />
                 <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>No Subscriptions Logged</h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Add your monthly streaming services, gym memberships, or rent to keep track of renewal dates.</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Add your monthly streaming services, gym memberships, or rent to track renewals and auto-log payments.</p>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
                 {subscriptions.map(sub => {
                   const daysUntil = getDaysUntilDue(sub.next_due_date);
+                  const isDue = daysUntil <= 0;
                   
                   // Color code badge for due date
                   let badgeBg = 'rgba(255, 255, 255, 0.05)';
@@ -343,10 +447,12 @@ function SubscriptionsPage() {
                         justifyContent: 'space-between', 
                         alignItems: 'center',
                         padding: '1rem',
-                        background: 'rgba(15, 15, 25, 0.7)',
+                        background: isDue ? 'rgba(35, 15, 20, 0.6)' : 'rgba(15, 15, 25, 0.7)',
                         borderRadius: 'var(--radius-md)',
-                        border: '1px solid rgba(255, 255, 255, 0.05)',
-                        transition: 'background 0.2s, border-color 0.2s'
+                        border: isDue ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(255, 255, 255, 0.05)',
+                        transition: 'background 0.2s, border-color 0.2s',
+                        flexWrap: 'wrap',
+                        gap: '0.75rem'
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -354,8 +460,8 @@ function SubscriptionsPage() {
                           width: 40, 
                           height: 40, 
                           borderRadius: '50%', 
-                          background: 'rgba(139, 92, 246, 0.15)', 
-                          color: '#A78BFA',
+                          background: isDue ? 'rgba(239, 68, 68, 0.15)' : 'rgba(139, 92, 246, 0.15)', 
+                          color: isDue ? '#EF4444' : '#A78BFA',
                           display: 'flex', 
                           alignItems: 'center', 
                           justifyContent: 'center',
@@ -369,7 +475,7 @@ function SubscriptionsPage() {
                           <span style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.95rem' }}>
                             {sub.title}
                           </span>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                             <span style={{ 
                               fontSize: '0.7rem', 
                               padding: '2px 6px', 
@@ -387,7 +493,7 @@ function SubscriptionsPage() {
                         </div>
                       </div>
                       
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.2rem' }}>
                           <span style={{ color: 'var(--text-primary)', fontWeight: 700, fontFamily: 'var(--font-mono)', fontSize: '1rem' }}>
                             {formatCurrency(sub.amount)}
@@ -396,7 +502,37 @@ function SubscriptionsPage() {
                             {sub.frequency}
                           </span>
                         </div>
+
+                        {/* One-Click Log to Expenses */}
+                        <button
+                          onClick={() => handlePaySubscription(sub)}
+                          disabled={payingId === sub.id}
+                          className="btn"
+                          title="Log as expense & advance next due date"
+                          style={{
+                            padding: '0.4rem 0.75rem',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            borderRadius: 'var(--radius-sm)',
+                            backgroundColor: isDue ? 'rgba(239, 68, 68, 0.2)' : 'rgba(6, 214, 160, 0.15)',
+                            color: isDue ? '#EF4444' : '#06D6A0',
+                            border: isDue ? '1px solid rgba(239, 68, 68, 0.35)' : '1px solid rgba(6, 214, 160, 0.3)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.35rem',
+                            cursor: 'pointer',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          {payingId === sub.id ? (
+                            <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} />
+                          ) : (
+                            <CheckCircle2 size={13} />
+                          )}
+                          Log Paid
+                        </button>
                         
+                        {/* Delete Button */}
                         <button 
                           onClick={() => handleDelete(sub.id)}
                           disabled={deletingId === sub.id}

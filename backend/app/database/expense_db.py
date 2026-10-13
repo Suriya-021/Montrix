@@ -179,3 +179,51 @@ def get_expense_stats(user_id: int, month: Optional[str] = None):
         }
     finally:
         db.close()
+
+def bulk_create_expenses(user_id: int, expense_records: list, skip_duplicates: bool = True):
+    db = SessionLocal()
+    try:
+        # Load existing expenses to detect duplicates
+        existing = db.query(Expense).filter(Expense.user_id == user_id).all()
+        existing_keys = {
+            (str(e.date), round(float(e.amount), 2), (e.description or '').strip().lower())
+            for e in existing
+        }
+
+        imported_count = 0
+        skipped_count = 0
+
+        for r in expense_records:
+            d_str = str(r['date'])
+            amt = round(float(r['amount']), 2)
+            desc = (r.get('description') or '').strip()
+            cat = (r.get('category') or 'Other').strip()
+            
+            key = (d_str, amt, desc.lower())
+            if skip_duplicates and key in existing_keys:
+                skipped_count += 1
+                continue
+
+            new_exp = Expense(
+                user_id=user_id,
+                amount=amt,
+                category=cat,
+                description=desc,
+                date=parse_date(d_str)
+            )
+            db.add(new_exp)
+            existing_keys.add(key)
+            imported_count += 1
+
+        db.commit()
+        return {
+            "imported_count": imported_count,
+            "skipped_count": skipped_count,
+            "total_processed": len(expense_records)
+        }
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+

@@ -1,7 +1,13 @@
 from fastapi import APIRouter, HTTPException, Depends
-from typing import List
+from typing import List, Any
 
-from ..schemas.subscription import SubscriptionCreate, SubscriptionUpdate, SubscriptionResponse
+from ..schemas.subscription import (
+    SubscriptionCreate, 
+    SubscriptionUpdate, 
+    SubscriptionResponse, 
+    PaySubscriptionResponse, 
+    ProcessDueResponse
+)
 from ..database import subscription_db
 from ..services.auth_service import get_current_user
 
@@ -23,6 +29,18 @@ def get_subscriptions(current_user: dict = Depends(get_current_user)):
     user_id = current_user["id"]
     return subscription_db.get_subscriptions(user_id)
 
+@router.get("/due", response_model=List[Any])
+def get_due_subscriptions(current_user: dict = Depends(get_current_user)):
+    """Retrieve recurring subscriptions currently due or overdue."""
+    user_id = current_user["id"]
+    return subscription_db.get_due_subscriptions(user_id)
+
+@router.post("/process-due", response_model=ProcessDueResponse)
+def process_all_due_subscriptions(current_user: dict = Depends(get_current_user)):
+    """Auto-process all due recurring bills, log them to expenses, and advance billing cycles."""
+    user_id = current_user["id"]
+    return subscription_db.process_all_due_subscriptions(user_id)
+
 @router.get("/{sub_id}", response_model=SubscriptionResponse)
 def get_subscription(sub_id: int, current_user: dict = Depends(get_current_user)):
     user_id = current_user["id"]
@@ -41,8 +59,16 @@ def update_subscription(sub_id: int, sub: SubscriptionUpdate, current_user: dict
         raise HTTPException(status_code=404, detail="Subscription not found")
         
     subscription_db.update_subscription(user_id, sub_id, sub)
-        
     return subscription_db.get_subscription_by_id(user_id, sub_id)
+
+@router.post("/{sub_id}/pay", response_model=PaySubscriptionResponse)
+def pay_subscription(sub_id: int, current_user: dict = Depends(get_current_user)):
+    """Log subscription as an expense and roll forward the next_due_date."""
+    user_id = current_user["id"]
+    result = subscription_db.pay_and_advance_subscription(user_id, sub_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Subscription not found")
+    return result
 
 @router.delete("/{sub_id}")
 def delete_subscription(sub_id: int, current_user: dict = Depends(get_current_user)):

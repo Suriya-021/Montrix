@@ -191,3 +191,96 @@ def test_expense_filtering_sorting_and_pagination(client, test_user):
     assert page_data["total"] >= 5
     assert page_data["total_pages"] >= 3
 
+def test_csv_import_preview(client, test_user):
+    csv_data = "Transaction Date,Particulars,Debit Amount,Tag\n2026-05-01,Starbucks Latte,₹320.00,Food\n2026-05-02,Metro Card,100,Transport\n"
+    files = {"file": ("statement.csv", csv_data.encode("utf-8"), "text/csv")}
+    
+    res = client.post("/api/expenses/import/preview", files=files, headers=test_user["headers"])
+    assert res.status_code == 200
+    data = res.json()
+    assert data["headers"] == ["Transaction Date", "Particulars", "Debit Amount", "Tag"]
+    assert data["total_rows"] == 2
+    assert len(data["sample_rows"]) == 2
+    suggested = data["suggested_mapping"]
+    assert suggested["date_col"] == "Transaction Date"
+    assert suggested["description_col"] == "Particulars"
+    assert suggested["amount_col"] == "Debit Amount"
+    assert suggested["category_col"] == "Tag"
+
+def test_csv_import_preview_empty_file(client, test_user):
+    files = {"file": ("empty.csv", b"", "text/csv")}
+    res = client.post("/api/expenses/import/preview", files=files, headers=test_user["headers"])
+    assert res.status_code == 400
+
+def test_csv_import_process_and_auto_categorization(client, test_user):
+    csv_data = (
+        "Date,Narration,Amount,Category\n"
+        "2026-06-01,Zomato Delicious Biryani,450.00,\n"
+        "02/06/2026,Uber ride to airport,₹850.50,\n"
+        "2026-06-03,Amazon Books,1200.00,Shopping\n"
+        "2026-06-04,Unknown Merchant X,99.00,\n"
+    )
+    files = {"file": ("bank_statement.csv", csv_data.encode("utf-8"), "text/csv")}
+    form_data = {
+        "date_col": "Date",
+        "description_col": "Narration",
+        "amount_col": "Amount",
+        "category_col": "Category",
+        "default_category": "Other",
+        "skip_duplicates": "true"
+    }
+
+    res = client.post("/api/expenses/import/process", files=files, data=form_data, headers=test_user["headers"])
+    assert res.status_code == 200
+    res_data = res.json()
+    assert res_data["imported_count"] == 4
+    assert res_data["skipped_count"] == 0
+
+    # Verify rows in database
+    get_res = client.get("/api/expenses/", headers=test_user["headers"])
+    assert get_res.status_code == 200
+    expenses = get_res.json()
+    
+    # Check auto-categorization
+    zomato_item = next(e for e in expenses if "Zomato" in e["description"])
+    assert zomato_item["category"] == "Food"
+    assert zomato_item["amount"] == 450.00
+
+    uber_item = next(e for e in expenses if "Uber" in e["description"])
+    assert uber_item["category"] == "Transport"
+    assert uber_item["amount"] == 850.50
+    assert uber_item["date"] == "2026-06-02"
+
+    amazon_item = next(e for e in expenses if "Amazon" in e["description"])
+    assert amazon_item["category"] == "Shopping"
+    assert amazon_item["amount"] == 1200.00
+
+    unknown_item = next(e for e in expenses if "Unknown Merchant" in e["description"])
+    assert unknown_item["category"] == "Other"
+    assert unknown_item["amount"] == 99.00
+
+def test_csv_import_duplicate_skipping(client, test_user):
+    csv_data = "Date,Description,Amount\n2026-06-15,Netflix Monthly,649.00\n"
+    files = {"file": ("statement.csv", csv_data.encode("utf-8"), "text/csv")}
+    form_data = {
+        "date_col": "Date",
+        "description_col": "Description",
+        "amount_col": "Amount",
+        "default_category": "Entertainment",
+        "skip_duplicates": "true"
+    }
+
+    # First import
+    res1 = client.post("/api/expenses/import/process", files=files, data=form_data, headers=test_user["headers"])
+    assert res1.status_code == 200
+    assert res1.json()["imported_count"] == 1
+    assert res1.json()["skipped_count"] == 0
+
+    # Second import with same data
+    files2 = {"file": ("statement.csv", csv_data.encode("utf-8"), "text/csv")}
+    res2 = client.post("/api/expenses/import/process", files=files2, data=form_data, headers=test_user["headers"])
+    assert res2.status_code == 200
+    assert res2.json()["imported_count"] == 0
+    assert res2.json()["skipped_count"] == 1
+
+

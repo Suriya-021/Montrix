@@ -1,11 +1,11 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, File, UploadFile, Form, HTTPException
 from fastapi.responses import StreamingResponse
 from typing import List, Optional, Union
 import io
 import csv
 
 from app.schemas.expense import ExpenseCreate, ExpenseResponse, PaginatedExpensesResponse
-from app.services import expense_service
+from app.services import expense_service, importer_service
 from app.services.auth_service import get_current_user
 
 router = APIRouter(prefix="/api/expenses", tags=["Expenses"])
@@ -76,6 +76,48 @@ def export_expenses_csv(current_user: dict = Depends(get_current_user)):
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+
+@router.post("/import/preview")
+def preview_expenses_csv(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    try:
+        contents = file.file.read()
+        return importer_service.preview_csv(contents)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to parse CSV file: {str(e)}")
+
+@router.post("/import/process")
+def process_expenses_csv(
+    file: UploadFile = File(...),
+    date_col: str = Form(...),
+    description_col: str = Form(...),
+    amount_col: str = Form(...),
+    category_col: Optional[str] = Form(None),
+    default_category: str = Form("Other"),
+    skip_duplicates: bool = Form(True),
+    current_user: dict = Depends(get_current_user)
+):
+    try:
+        contents = file.file.read()
+        result = importer_service.process_csv_import(
+            user_id=current_user['id'],
+            file_bytes=contents,
+            date_col=date_col,
+            description_col=description_col,
+            amount_col=amount_col,
+            category_col=category_col,
+            default_category=default_category,
+            skip_duplicates=skip_duplicates
+        )
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to process CSV import: {str(e)}")
 
 @router.get("/{expense_id}", response_model=ExpenseResponse)
 def get_expense(expense_id: int, current_user: dict = Depends(get_current_user)):

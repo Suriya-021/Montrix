@@ -1,11 +1,11 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import bcrypt
 from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from app.database import user_db
-from app.schemas.user import UserRegister, UserLogin
+from app.schemas.user import UserRegister, UserLogin, UserProfileUpdate, PasswordChange
 
 # Security configuration (read from .env or fallback)
 SECRET_KEY = os.getenv("SECRET_KEY", "montrix_super_secret_key_change_in_production")
@@ -33,7 +33,7 @@ def create_access_token(data: dict):
     to_encode = data.copy()
     
     # Calculate expiration time
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     
     # Sign the token using our secret key
@@ -101,3 +101,42 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         }
     except JWTError:
         raise credentials_exception
+
+def update_user_profile(user_id: int, profile_data: UserProfileUpdate):
+    """Updates user's name and/or email with uniqueness check."""
+    if profile_data.email:
+        existing = user_db.get_user_by_email(profile_data.email)
+        if existing and existing['id'] != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email is already in use by another account"
+            )
+    
+    updated = user_db.update_user_profile(user_id, profile_data.name, profile_data.email)
+    if not updated:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return updated
+
+def change_password(user_id: int, data: PasswordChange):
+    """Verifies existing password and updates to new password."""
+    user = user_db.get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        
+    if not verify_password(data.current_password, user['password_hash']):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect"
+        )
+        
+    new_hash = hash_password(data.new_password)
+    user_db.update_user_password(user_id, new_hash)
+    return {"message": "Password updated successfully"}
+
+def delete_account(user_id: int):
+    """Permanently deletes the user and all associated financial records."""
+    success = user_db.delete_user_and_all_data(user_id)
+    if not success:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return {"message": "Account and all associated financial data permanently deleted"}
+
