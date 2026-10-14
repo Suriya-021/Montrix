@@ -20,6 +20,9 @@ const PAGE_TITLES = {
 
 function TopNavbar() {
   const location = useLocation();
+  if (location.pathname === '/') {
+    return null;
+  }
   const pageTitle = PAGE_TITLES[location.pathname] || 'Montrix';
   
   // Get user initial from localStorage

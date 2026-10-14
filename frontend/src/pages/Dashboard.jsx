@@ -1,276 +1,369 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  Plus, FileText, Terminal, Bell, Clock, Loader2 
+} from 'lucide-react';
 import { expenseService } from '../services/expenseService';
 import { incomeService } from '../services/incomeService';
 import { subscriptionService } from '../services/subscriptionService';
 import { goalService } from '../services/goalService';
 import { budgetService } from '../services/budgetService';
 import { useCurrency } from '../context/CurrencyContext';
-import { Link } from 'react-router-dom';
 
-// V2 Components
+// Reference Components
 import StatCard from '../components/Cards/StatCard';
 import CashFlowChart from '../components/Charts/CashFlowChart';
 import CategoryDonut from '../components/Charts/CategoryDonut';
 import TransactionsWidget from '../components/Widgets/TransactionsWidget';
 import UpcomingBillsWidget from '../components/Widgets/UpcomingBillsWidget';
 import SavingsGoalsWidget from '../components/Widgets/SavingsGoalsWidget';
-import { Loader2, Wallet, TrendingDown, TrendingUp, PiggyBank, AlertTriangle, ArrowRight } from 'lucide-react';
+import AddExpenseModal from '../components/AddExpenseModal/AddExpenseModal';
+import ImportExpensesModal from '../components/ImportExpensesModal/ImportExpensesModal';
+import Toast from '../components/Toast/Toast';
 
-// Category colors for the donut chart
-const CATEGORY_COLORS = {
-  Food: '#06D6A0',
-  Transport: '#3B82F6',
-  Entertainment: '#8B5CF6',
-  Shopping: '#EC4899',
-  Bills: '#F59E0B',
-  Health: '#EF4444',
-  Education: '#6366F1',
-  Games: '#22D3EE',
-  Investment: '#10B981',
-  Other: '#64748B'
-};
+import './Dashboard.css';
 
 function Dashboard() {
-  const { formatCurrency } = useCurrency();
+  const navigate = useNavigate();
+  const { currency, formatCurrency } = useCurrency();
+  
+  // Real telemetry state
   const [stats, setStats] = useState(null);
+  const [budgetStatus, setBudgetStatus] = useState(null);
   const [recentTransactions, setRecentTransactions] = useState([]);
   const [upcomingBills, setUpcomingBills] = useState([]);
   const [activeGoals, setActiveGoals] = useState([]);
-  const [totalIncome, setTotalIncome] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [allExpenses, setAllExpenses] = useState([]);
+  const [incomeList, setIncomeList] = useState([]);
   const [cashFlowData, setCashFlowData] = useState([]);
-  const [budgetStatus, setBudgetStatus] = useState(null);
-  
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Modals state
+  const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [toast, setToast] = useState({ show: false, message: '', type: '' });
+
+  // Live UTC Clock
+  const [utcTimestamp, setUtcTimestamp] = useState('');
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      const options = { month: 'short', day: '2-digit', year: 'numeric', timeZone: 'UTC' };
+      const datePart = now.toLocaleDateString('en-US', options);
+      const timePart = now.toISOString().slice(11, 19);
+      setUtcTimestamp(`As of ${datePart} • ${timePart} UTC`);
+    };
+
+    updateTime();
+    const timer = setInterval(updateTime, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // User Profile
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const userName = user.full_name || user.username || 'User';
+  const userInitial = userName.charAt(0).toUpperCase();
+
   useEffect(() => {
     loadDashboardData();
-    
-    const handleDataChange = () => {
-      loadDashboardData();
-    };
-    
-    window.addEventListener('expenseDataChanged', handleDataChange);
-    return () => window.removeEventListener('expenseDataChanged', handleDataChange);
+    const handleRefresh = () => loadDashboardData();
+    window.addEventListener('expenseDataChanged', handleRefresh);
+    return () => window.removeEventListener('expenseDataChanged', handleRefresh);
   }, []);
 
   const loadDashboardData = async () => {
-    setIsLoading(true);
     try {
-      const [statsData, expensesData, incomeData, billsData, goalsData, cfData, bStatusData] = await Promise.all([
+      const [statsData, expensesData, incomeData, billsData, goalsData, cfData, bStatus] = await Promise.all([
         expenseService.getStats().catch(() => null),
-        expenseService.getAll().catch(() => []),
+        expenseService.getAll({ pageSize: 10 }).catch(() => []),
         incomeService.getAll().catch(() => []),
         subscriptionService.getAll().catch(() => []),
         goalService.getAll().catch(() => []),
         expenseService.getCashFlow().catch(() => []),
         budgetService.getStatus().catch(() => null)
       ]);
-      
+
       setStats(statsData);
-      setAllExpenses(Array.isArray(expensesData) ? expensesData : []);
-      setRecentTransactions(Array.isArray(expensesData) ? expensesData.slice(0, 5) : []);
-      setCashFlowData(Array.isArray(cfData) ? cfData : []);
-      setBudgetStatus(bStatusData);
+      setBudgetStatus(bStatus);
       
+      const expItems = Array.isArray(expensesData) 
+        ? expensesData 
+        : (expensesData?.items || []);
+      setRecentTransactions(expItems);
+
       const incomeArr = Array.isArray(incomeData) ? incomeData : [];
-      const incomeSum = incomeArr.reduce((sum, item) => sum + (item.amount || 0), 0);
-      setTotalIncome(incomeSum);
+      setIncomeList(incomeArr);
 
       const billsArr = Array.isArray(billsData) ? billsData : [];
-      const activeB = billsArr.sort((a, b) => {
-        const dateA = a.next_due_date ? new Date(a.next_due_date) : new Date();
-        const dateB = b.next_due_date ? new Date(b.next_due_date) : new Date();
-        return dateA - dateB;
-      });
-      setUpcomingBills(activeB.slice(0, 4));
-      
+      setUpcomingBills(billsArr);
+
       const goalsArr = Array.isArray(goalsData) ? goalsData : [];
-      const activeG = goalsArr.filter(g => (g.current_amount || 0) < (g.target_amount || 1));
-      setActiveGoals(activeG.slice(0, 3));
-    } catch (error) {
-      console.error("Failed to load dashboard data:", error);
+      setActiveGoals(goalsArr);
+
+      setCashFlowData(Array.isArray(cfData) ? cfData : []);
+    } catch (err) {
+      console.error("Dashboard data load error:", err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const totalExpenses = stats?.total_spent || 0;
-  const netBalance = totalIncome - totalExpenses;
-  const savings = netBalance > 0 ? netBalance : 0;
-
-  const categoryData = (stats && Array.isArray(stats.category_breakdown)) 
-    ? stats.category_breakdown.map(item => {
-        const total = stats.total_spent || 1;
-        return {
-          name: item.name || 'Other',
-          value: item.value || 0,
-          color: CATEGORY_COLORS[item.name] || '#64748B',
-          percentage: Math.round(((item.value || 0) / total) * 100)
-        };
-      }).sort((a, b) => b.value - a.value) 
-    : [];
-
-  const generateSparkline = (baseValue) => {
-    if (!baseValue || baseValue === 0) {
-      return Array.from({ length: 7 }, () => ({ value: 0 }));
+  const handleSaveExpense = async (expenseData) => {
+    try {
+      await expenseService.create(expenseData);
+      setToast({ show: true, message: 'Expense logged successfully!', type: 'success' });
+      setIsAddExpenseOpen(false);
+      loadDashboardData();
+    } catch (err) {
+      setToast({ show: true, message: err.message || 'Failed to save expense', type: 'error' });
     }
-    return Array.from({ length: 7 }, (_, i) => ({
-      value: Math.round(baseValue * (0.7 + Math.random() * 0.6))
-    }));
   };
 
-  if (isLoading) {
-    return (
-      <div className="empty-state" style={{ height: '60vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-        <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', color: '#8B5CF6' }} />
-        <p style={{ marginTop: 16, color: 'var(--text-muted)' }}>Loading your dashboard...</p>
-      </div>
-    );
-  }
+  const handleImportSuccess = (result) => {
+    setToast({
+      show: true,
+      message: `Successfully imported ${result.imported_count} transactions!`,
+      type: 'success'
+    });
+    loadDashboardData();
+  };
+
+  // 100% Real Calculations based on actual user data
+  const totalIncome = incomeList.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  
+  const currentMonthKey = new Date().toISOString().slice(0, 7);
+  const thisMonthIncome = incomeList
+    .filter(i => i.date && String(i.date).startsWith(currentMonthKey))
+    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+
+  const totalSpent = Number(stats?.total_spent || 0);
+  const thisMonthSpent = Number(stats?.this_month_spent || stats?.month_spent || 0);
+
+  const netBalance = totalIncome - totalSpent;
+  const netSavings = Math.max(0, netBalance);
+  const savingsRate = totalIncome > 0 
+    ? Math.max(0, Math.round(((totalIncome - totalSpent) / totalIncome) * 100)) 
+    : 0;
+
+  // Goals calculations
+  const totalGoalsSaved = activeGoals.reduce((sum, g) => sum + Number(g.current_amount || 0), 0);
+  const totalGoalsTarget = activeGoals.reduce((sum, g) => sum + Number(g.target_amount || 0), 0);
+  const goalsFundedPct = totalGoalsTarget > 0 
+    ? Math.min(100, Math.round((totalGoalsSaved / totalGoalsTarget) * 100)) 
+    : 0;
+
+  // Budgets calculations
+  const totalBudget = Number(budgetStatus?.total_budget || stats?.total_budget || 0);
+  const budgetUsedPct = Number(budgetStatus?.percentage_used || stats?.budget_used_percentage || 0);
+  const budgetRemaining = Math.max(0, totalBudget - thisMonthSpent);
+
+  // Sparkline from real 6-month cashflow history
+  const balanceSparkline = (Array.isArray(cashFlowData) && cashFlowData.length > 0)
+    ? cashFlowData.map(d => ({
+        value: Math.max(0, Number(d.income || 0) - Number(d.expenses || 0) + 10)
+      }))
+    : [];
+
+  const latestIncome = incomeList.length > 0 
+    ? incomeList[incomeList.length - 1] 
+    : null;
 
   return (
-    <div>
-      {/* Welcome Header */}
-      <div className="page-header" style={{ marginBottom: 'var(--space-6)' }}>
-        <div>
-          <h1 className="page-title" style={{ fontSize: '1.75rem' }}>Overview</h1>
-          <p style={{ color: 'var(--text-muted)', marginTop: 'var(--space-1)', fontSize: '0.9rem' }}>
-            Here's what's happening with your finances today.
-          </p>
-        </div>
-      </div>
-
-      {/* Live Budget Alerts Banner */}
-      {budgetStatus?.alerts?.length > 0 && (
-        <div 
-          style={{ 
-            marginBottom: 'var(--space-6)',
-            padding: '1rem 1.25rem',
-            borderRadius: 'var(--radius-md)',
-            background: budgetStatus.alerts.some(a => a.type === 'danger') 
-              ? 'linear-gradient(90deg, rgba(239, 68, 68, 0.16), rgba(245, 158, 11, 0.06))'
-              : 'linear-gradient(90deg, rgba(245, 158, 11, 0.16), rgba(139, 92, 246, 0.06))',
-            border: budgetStatus.alerts.some(a => a.type === 'danger')
-              ? '1px solid rgba(239, 68, 68, 0.35)'
-              : '1px solid rgba(245, 158, 11, 0.35)',
-            boxShadow: budgetStatus.alerts.some(a => a.type === 'danger') ? '0 4px 20px rgba(239, 68, 68, 0.15)' : 'none',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '1rem',
-            flexWrap: 'wrap'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div style={{ 
-              width: 36, 
-              height: 36, 
-              borderRadius: '50%', 
-              background: budgetStatus.alerts.some(a => a.type === 'danger') ? 'rgba(239, 68, 68, 0.2)' : 'rgba(245, 158, 11, 0.2)', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              color: budgetStatus.alerts.some(a => a.type === 'danger') ? '#EF4444' : '#F59E0B', 
-              flexShrink: 0 
-            }}>
-              <AlertTriangle size={18} />
-            </div>
-            <div>
-              <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.95rem' }}>
-                {budgetStatus.alerts.some(a => a.type === 'danger') ? 'Budget Limit Exceeded' : 'Budget Warning'}
-              </div>
-              <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '2px' }}>
-                {budgetStatus.alerts[0].message}
-                {budgetStatus.alerts.length > 1 && ` (+${budgetStatus.alerts.length - 1} other alerts)`}
-              </div>
-            </div>
-          </div>
-          <Link 
-            to="/budgets" 
-            style={{ 
-              display: 'inline-flex', 
-              alignItems: 'center', 
-              gap: '6px', 
-              color: '#22D3EE', 
-              fontSize: '0.85rem', 
-              fontWeight: 600, 
-              textDecoration: 'none',
-              padding: '0.45rem 0.85rem',
-              background: 'rgba(34, 211, 238, 0.1)',
-              borderRadius: 'var(--radius-sm)',
-              border: '1px solid rgba(34, 211, 238, 0.2)'
-            }}
-          >
-            Review Budgets <ArrowRight size={14} />
-          </Link>
-        </div>
+    <div className="dashboard-ref-container">
+      {/* Toast Notification */}
+      {toast.show && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast({ show: false, message: '', type: '' })} 
+        />
       )}
 
-      {/* KPI Cards Row */}
-      <div className="stat-grid">
-        <StatCard 
-          icon={Wallet}
-          label="Balance"
-          value={formatCurrency(netBalance)}
-          change="+14.50%"
-          changeType="positive"
-          color="#8B5CF6"
-          sparklineData={generateSparkline(netBalance)}
-        />
-        <StatCard 
-          icon={TrendingUp}
-          label="Income"
-          value={formatCurrency(totalIncome)}
-          change="+25.00%"
-          changeType="positive"
-          color="#22D3EE"
-          sparklineData={generateSparkline(totalIncome)}
-        />
-        <StatCard 
-          icon={TrendingDown}
-          label="Expense"
-          value={formatCurrency(totalExpenses)}
-          change="-12.20%"
-          changeType="negative"
-          color="#EC4899"
-          sparklineData={generateSparkline(totalExpenses)}
-        />
-        <StatCard 
-          icon={PiggyBank}
-          label="Savings"
-          value={formatCurrency(savings)}
-          change="+36.70%"
-          changeType="positive"
-          color="#10B981"
-          sparklineData={generateSparkline(savings)}
-        />
-      </div>
+      {/* TOP HEADER MASTER CONTROL BAR */}
+      <header className="dashboard-ref-header">
+        {/* Left Welcome & Telemetry Meta */}
+        <div className="dashboard-header-left">
+          <h1 className="dashboard-greeting-title">Welcome back, {userName} 👋</h1>
+          <p className="dashboard-greeting-sub">Here is your financial velocity today.</p>
+          
+          <div className="dashboard-status-row">
+            <span className="status-synced-pill">
+              <span className="pulse-dot"></span>
+              LEDGER REAL-TIME SYNCED
+            </span>
+            <span className="status-time-text">
+              <Clock size={13} />
+              {utcTimestamp}
+            </span>
+            <span className="status-currency-pill font-mono">
+              {currency || 'USD'} (Base)
+            </span>
+          </div>
+        </div>
 
-      {/* Main Dashboard Layout */}
-      <div className="dashboard-body">
-        <div className="dashboard-column-left">
+        {/* Right Action Controls */}
+        <div className="dashboard-header-right">
+          <button 
+            className="btn-header-action"
+            onClick={() => setIsImportModalOpen(true)}
+          >
+            <FileText size={15} />
+            <span>Import CSV Statement</span>
+          </button>
+
+          <button 
+            className="btn-header-action"
+            onClick={() => navigate('/planning')}
+            title="Execute Financial Plan"
+          >
+            <Terminal size={15} />
+            <span>Execute Plan</span>
+            <kbd className="key-badge">⌘E</kbd>
+          </button>
+
+          <button 
+            className="btn-primary-purple"
+            onClick={() => setIsAddExpenseOpen(true)}
+          >
+            <Plus size={16} />
+            <span>Add Expense</span>
+          </button>
+
+          <button className="btn-bell-icon" title="Notifications">
+            <Bell size={16} />
+            <span className="bell-ping-dot"></span>
+          </button>
+
+          <div 
+            className="user-avatar-pill" 
+            onClick={() => navigate('/settings')}
+            title="Profile Settings"
+          >
+            {userInitial}
+          </div>
+        </div>
+      </header>
+
+      {/* TOP 4 KPI TELEMETRY CARDS - 100% REAL & EASILY UNDERSTANDABLE */}
+      <section className="dashboard-kpi-grid">
+        {/* Card 1: NET BALANCE (Cash on Hand) */}
+        <StatCard 
+          label="NET BALANCE (CASH ON HAND)"
+          badgeText={netBalance >= 0 ? "↗ Surplus" : "↘ Deficit"}
+          badgeType={netBalance >= 0 ? "positive" : "urgent"}
+          value={formatCurrency(netBalance)}
+          valueColor={netBalance >= 0 ? "#FFFFFF" : "#F87171"}
+          sparklineData={balanceSparkline.length > 0 ? balanceSparkline : null}
+          footerLeft={`All-Time Inflow: ${formatCurrency(totalIncome)}`}
+          footerRight={`All-Time Outflow: ${formatCurrency(totalSpent)}`}
+        />
+
+        {/* Card 2: TOTAL INFLOW (Earnings) */}
+        <StatCard 
+          label="TOTAL INFLOW (EARNINGS)"
+          badgeText={`${incomeList.length} Records`}
+          badgeType="cyan"
+          value={formatCurrency(totalIncome)}
+          middleItem={
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22D3EE' }}></span>
+              <span>This Month Inflow: <strong style={{ color: '#FFFFFF' }} className="font-mono">{formatCurrency(thisMonthIncome)}</strong></span>
+            </div>
+          }
+          footerHighlight={
+            latestIncome 
+              ? `Latest: ${latestIncome.source} (${formatCurrency(latestIncome.amount)})` 
+              : 'No income logged yet'
+          }
+        />
+
+        {/* Card 3: TOTAL OUTFLOW (Spending) */}
+        <StatCard 
+          label="TOTAL OUTFLOW (SPENDING)"
+          badgeText={`${stats?.category_breakdown?.length || 0} Categories`}
+          badgeType="amber"
+          value={formatCurrency(totalSpent)}
+          middleItem={
+            totalBudget > 0 ? (
+              <div>
+                <span>Budget Capacity: <strong>{budgetUsedPct}% ({formatCurrency(totalBudget)} Cap)</strong></span>
+              </div>
+            ) : (
+              <div>
+                <span>This Month Outflow: <strong style={{ color: '#FFFFFF' }} className="font-mono">{formatCurrency(thisMonthSpent)}</strong></span>
+              </div>
+            )
+          }
+          footerLeft={totalBudget > 0 ? "Budget Remaining:" : "Current Month Spend:"}
+          footerRight={totalBudget > 0 ? `${formatCurrency(budgetRemaining)} unspent` : formatCurrency(thisMonthSpent)}
+        />
+
+        {/* Card 4: NET SAVINGS & GOALS */}
+        <StatCard 
+          label="NET SAVINGS & GOALS"
+          badgeText={`${savingsRate}% savings rate`}
+          badgeType="positive"
+          value={formatCurrency(totalGoalsSaved > 0 ? totalGoalsSaved : netSavings)}
+          valueColor="#10B981"
+          middleItem={
+            activeGoals.length > 0 ? (
+              <div>
+                <span>{activeGoals.length} Active Financial Goals (<strong style={{ color: '#10B981' }}>{goalsFundedPct}% Funded</strong>)</span>
+              </div>
+            ) : (
+              <div>
+                <span>Net Cash Savings: <strong style={{ color: '#10B981' }}>{formatCurrency(netSavings)}</strong></span>
+              </div>
+            )
+          }
+          footerLeft={activeGoals.length > 0 ? "Combined Target:" : "Available Capital:"}
+          footerRight={activeGoals.length > 0 ? formatCurrency(totalGoalsTarget) : formatCurrency(netSavings)}
+        />
+      </section>
+
+      {/* BODY 2-COLUMN MAIN GRID */}
+      <section className="dashboard-main-grid">
+        {/* Left Column: Cash Flow Velocity + Recent Transactions */}
+        <div className="dashboard-left-col">
           <CashFlowChart data={cashFlowData} />
           <TransactionsWidget 
             transactions={recentTransactions} 
-            formatCurrency={formatCurrency} 
+            formatCurrency={formatCurrency}
+            onAddExpense={() => setIsAddExpenseOpen(true)}
           />
         </div>
-        <div className="dashboard-column-right">
+
+        {/* Right Column: Category Donut + Scheduled Bills + Target Milestones */}
+        <div className="dashboard-right-col">
           <CategoryDonut 
-            data={categoryData} 
-            totalLabel="Total expenses per month"
-            totalValue={formatCurrency(totalExpenses)}
+            data={stats?.category_breakdown} 
+            totalValue={formatCurrency(thisMonthSpent > 0 ? thisMonthSpent : totalSpent)}
+            formatCurrency={formatCurrency}
           />
           <UpcomingBillsWidget 
             bills={upcomingBills} 
-            formatCurrency={formatCurrency} 
+            formatCurrency={formatCurrency}
+            onBillPaid={loadDashboardData}
           />
           <SavingsGoalsWidget 
             goals={activeGoals} 
-            formatCurrency={formatCurrency} 
+            formatCurrency={formatCurrency}
           />
         </div>
-      </div>
+      </section>
+
+      {/* MODALS */}
+      <AddExpenseModal 
+        isOpen={isAddExpenseOpen}
+        onClose={() => setIsAddExpenseOpen(false)}
+        onAdd={handleSaveExpense}
+      />
+
+      <ImportExpensesModal 
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImportSuccess={handleImportSuccess}
+      />
     </div>
   );
 }

@@ -1,0 +1,245 @@
+/* Dashboard.css — Montrix Reference Command Dashboard */
+
+.dashboard-ref-container {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  width: 100%;
+}
+
+/* --- Top Header Master Control Bar --- */
+.dashboard-ref-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: 4px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.dashboard-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dashboard-greeting-title {
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.dashboard-greeting-sub {
+  font-size: 0.86rem;
+  color: #94A3B8;
+  margin: 0 0 6px 0;
+}
+
+.dashboard-status-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.status-synced-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: #10B981;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+}
+
+.pulse-dot {
+  width: 6px;
+  height: 6px;
+  background-color: #10B981;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #10B981;
+  animation: pulseGreen 2s infinite;
+}
+
+@keyframes pulseGreen {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+.status-time-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.75rem;
+  color: #64748B;
+  font-family: var(--font-mono, monospace);
+}
+
+.status-currency-pill {
+  font-size: 0.72rem;
+  color: #94A3B8;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 1px 7px;
+  border-radius: 6px;
+}
+
+/* Header Action Buttons (Right) */
+.dashboard-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-header-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #CBD5E1;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 7px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-header-action:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #FFFFFF;
+}
+
+.btn-header-action .key-badge {
+  font-size: 0.68rem;
+  font-family: var(--font-mono, monospace);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px 4px;
+  border-radius: 4px;
+  color: #94A3B8;
+}
+
+.btn-primary-purple {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #9D74FF;
+  border: none;
+  color: #07070B;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 7px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(157, 116, 255, 0.35);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-primary-purple:hover {
+  background: #B594FF;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(157, 116, 255, 0.45);
+}
+
+.btn-bell-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #CBD5E1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.btn-bell-icon:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #FFFFFF;
+}
+
+.bell-ping-dot {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 6px;
+  height: 6px;
+  background-color: #9D74FF;
+  border-radius: 50%;
+}
+
+.user-avatar-pill {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #9D74FF, #22D3EE);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #050507;
+  font-weight: 700;
+  font-size: 0.85rem;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+}
+
+/* --- Top 4 KPI Cards Grid --- */
+.dashboard-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+/* --- Body 2-Column Split --- */
+.dashboard-main-grid {
+  display: grid;
+  grid-template-columns: 1fr 390px;
+  gap: 20px;
+  align-items: start;
+}
+
+.dashboard-left-col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.dashboard-right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .dashboard-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .dashboard-main-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+  .dashboard-ref-header {
+    flex-direction: column;
+  }
+}

@@ -25,23 +25,23 @@
   --glass-blur: 12px;
 
   /* V2 Card System */
-  --card-bg: rgba(12, 12, 20, 0.8);
-  --card-border: rgba(255, 255, 255, 0.05);
-  --card-radius: 20px;
-  --card-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
-  --card-hover-shadow: 0 8px 40px rgba(0, 0, 0, 0.3);
-  --card-padding: 24px;
+  --card-bg: #0C0C12;
+  --card-border: rgba(255, 255, 255, 0.06);
+  --card-radius: 14px;
+  --card-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  --card-hover-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  --card-padding: 20px;
 
   /* V2 Accent Palette */
-  --accent-primary: #8B5CF6;
-  --accent-glow: rgba(139, 92, 246, 0.15);
-  --accent-hover: #A78BFA;
-  --accent-secondary: #2DD4BF;
+  --accent-primary: #9D74FF;
+  --accent-glow: rgba(157, 116, 255, 0.25);
+  --accent-hover: #B594FF;
+  --accent-secondary: #22D3EE;
   --accent-cyan: #22D3EE;
   --accent-blue: #6366F1;
-  --accent-purple: #A855F7;
+  --accent-purple: #9D74FF;
   --accent-teal: #06D6A0;
-  --accent-gradient: linear-gradient(135deg, #8B5CF6, #6366F1, #22D3EE);
+  --accent-gradient: linear-gradient(135deg, #9D74FF, #6366F1, #22D3EE);
 
   /* Text */
   --text-primary: #F1F5F9;

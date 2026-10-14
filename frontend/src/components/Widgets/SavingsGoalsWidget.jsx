@@ -1,67 +1,105 @@
 import React from 'react';
-import { ChevronRight, Target } from 'lucide-react';
+import { Plus, Target, PiggyBank } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import './Widgets.css';
 
-/**
- * SavingsGoalsWidget - Displays current progress towards financial goals
- * 
- * @param {Array} goals - Array of goal objects { id, title, currentAmount, targetAmount }
- * @param {Function} formatCurrency - Formatter function for currency display
- */
-const SavingsGoalsWidget = ({ goals = [], formatCurrency = (val) => `$${val}` }) => {
-  // Take max 3 goals
-  const displayGoals = goals.slice(0, 3);
+const GRADIENTS = [
+  { gradient: 'linear-gradient(90deg, #06D6A0, #22D3EE)', pctColor: '#22D3EE' },
+  { gradient: 'linear-gradient(90deg, #10B981, #06D6A0)', pctColor: '#10B981' },
+  { gradient: 'linear-gradient(90deg, #9D74FF, #F472B6)', pctColor: '#F472B6' },
+  { gradient: 'linear-gradient(90deg, #3B82F6, #9D74FF)', pctColor: '#9D74FF' },
+];
 
-  const calculateProgress = (current, target) => {
-    if (!target) return 0;
-    const percentage = (current / target) * 100;
-    return Math.min(Math.max(percentage, 0), 100); // Clamp between 0-100
-  };
+const SavingsGoalsWidget = ({ goals = [], formatCurrency }) => {
+  const rawGoals = Array.isArray(goals) ? goals : [];
+
+  const displayGoals = rawGoals.slice(0, 3).map((g, idx) => {
+    const cur = Number(g.current_amount || 0);
+    const tgt = Number(g.target_amount || 1);
+    const pct = Math.min(100, Math.round((cur / tgt) * 100));
+    const style = GRADIENTS[idx % GRADIENTS.length];
+
+    return {
+      id: g.id || idx,
+      title: g.title || g.name || 'Financial Goal',
+      percentage: pct,
+      current: cur,
+      target: tgt,
+      gradient: style.gradient,
+      pctColor: style.pctColor
+    };
+  });
 
   return (
-    <div className="glass-card widget-card">
-      <div className="widget-header">
-        <h3 className="widget-title">Saving goals</h3>
-        <a href="/planning" className="widget-link">
-          Show more <ChevronRight size={16} />
-        </a>
+    <div className="milestones-widget-ref">
+      {/* Header */}
+      <div className="milestones-widget-ref__header">
+        <div>
+          <h3 className="milestones-title">Target Milestones</h3>
+          <p className="milestones-subtitle">Capital allocation towards structured funds</p>
+        </div>
+        <Link to="/planning" className="milestones-add-btn" title="Add Milestone">
+          <Plus size={16} />
+        </Link>
       </div>
-      
-      <div className="widget-list">
-        {displayGoals.length === 0 ? (
-          <div className="widget-empty">No active goals</div>
-        ) : (
-          displayGoals.map((goal, index) => {
-            const current = goal.current_amount || goal.currentAmount || 0;
-            const target = goal.target_amount || goal.targetAmount || 0;
-            const progress = calculateProgress(current, target);
-            
+
+      {/* Goal Items or Clean Empty State */}
+      {rawGoals.length === 0 ? (
+        <div className="widget-empty-state">
+          <div className="widget-empty-icon" style={{ background: 'rgba(16, 185, 129, 0.08)', color: '#10B981', borderColor: 'rgba(16, 185, 129, 0.2)' }}>
+            <PiggyBank size={22} />
+          </div>
+          <h4 className="widget-empty-title">No savings goals set</h4>
+          <p className="widget-empty-desc">
+            Define savings targets for emergency reserves, investments, or large planned purchases in capital planning.
+          </p>
+          <Link to="/planning" className="widget-empty-btn" style={{ borderColor: 'rgba(16, 185, 129, 0.3)', color: '#6EE7B7' }}>
+            <Plus size={14} />
+            <span>Create First Goal</span>
+          </Link>
+        </div>
+      ) : (
+        <div className="milestones-list">
+          {displayGoals.map((m) => {
+            const formattedCurrent = formatCurrency 
+              ? formatCurrency(m.current) 
+              : `$${m.current.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            const formattedTarget = formatCurrency 
+              ? formatCurrency(m.target) 
+              : `$${m.target.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
             return (
-              <div key={goal.id || index} className="widget-goal-item">
-                <div className="widget-goal-header">
-                  <div className="widget-goal-title">
-                    <Target size={16} className="widget-goal-icon" />
-                    <span>{goal.title || goal.name}</span>
-                  </div>
-                  <span className="widget-goal-percentage">{Math.round(progress)}%</span>
+              <div key={m.id} className="milestone-card-item">
+                {/* Title & Percentage Header */}
+                <div className="milestone-meta-row">
+                  <span className="milestone-name">{m.title}</span>
+                  <span className="milestone-pct font-mono" style={{ color: m.pctColor }}>
+                    {m.percentage}%
+                  </span>
                 </div>
-                
-                <div className="widget-progress">
+
+                {/* Progress Track */}
+                <div className="milestone-track">
                   <div 
-                    className="widget-progress__fill" 
-                    style={{ width: `${progress}%` }}
+                    className="milestone-bar-fill" 
+                    style={{ width: `${m.percentage}%`, background: m.gradient }}
                   ></div>
                 </div>
-                
-                <div className="widget-goal-amounts">
-                  <span className="amount-current">{formatCurrency(current)}</span>
-                  <span className="amount-target">of {formatCurrency(target)}</span>
+
+                {/* Amounts Row */}
+                <div className="milestone-amounts-row">
+                  <span className="milestone-current font-mono">
+                    {formattedCurrent} saved
+                  </span>
+                  <span className="milestone-target font-mono">
+                    Target: {formattedTarget}
+                  </span>
                 </div>
               </div>
             );
-          })
-        )}
-      </div>
+          })}
+        </div>
+      )}
     </div>
   );
 };

@@ -1,85 +1,113 @@
-/* StatCard.css — V2 Premium Dark */
+/* StatCard.css — Montrix Reference Telemetry Card */
 
-.stat-card {
+.stat-card-ref {
+  background: #0C0C12;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 18px 20px;
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--card-padding);
-  border-radius: var(--card-radius);
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-top: 2px solid var(--card-border); /* will be overridden by inline style */
-  transition: transform var(--transition-base), box-shadow var(--transition-base);
+  min-height: 168px;
+  justify-content: space-between;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   position: relative;
   overflow: hidden;
 }
 
-.stat-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: inherit;
-  opacity: 0.5;
-}
-
-.stat-card:hover {
+.stat-card-ref:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
 }
 
-.stat-card-header {
+/* Header */
+.stat-card-ref__header {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-}
-
-.stat-card-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.stat-card-label {
-  color: var(--text-muted);
-  font-size: 0.8rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.stat-card-value {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  font-family: var(--font-mono);
-  line-height: 1;
-}
-
-.stat-card-footer {
-  display: flex;
   justify-content: space-between;
-  align-items: flex-end;
-  height: 32px;
+  margin-bottom: 8px;
+}
+
+.stat-card-ref__label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #94A3B8;
+}
+
+.stat-card-ref__badge {
+  font-size: 0.68rem;
+  font-family: var(--font-mono, monospace);
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+
+.stat-card-ref__badge--positive {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10B981;
+}
+
+.stat-card-ref__badge--cyan {
+  background: rgba(34, 211, 238, 0.15);
+  color: #22D3EE;
+}
+
+.stat-card-ref__badge--negative,
+.stat-card-ref__badge--amber {
+  background: rgba(245, 158, 11, 0.15);
+  color: #F59E0B;
+}
+
+/* Main Value */
+.stat-card-ref__value {
+  font-size: 1.65rem;
+  font-weight: 700;
+  line-height: 1.15;
+  margin: 2px 0 10px 0;
+  letter-spacing: -0.02em;
+}
+
+/* Middle Telemetry */
+.stat-card-ref__middle {
+  font-size: 0.78rem;
+  color: #94A3B8;
+  margin-bottom: 6px;
+}
+
+.stat-card-ref__sparkline {
+  margin: 4px -6px 8px -6px;
+  height: 36px;
+}
+
+/* Footer Telemetry */
+.stat-card-ref__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.74rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  padding-top: 8px;
   margin-top: auto;
 }
 
-.stat-card-change {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  padding: 3px 8px;
-  border-radius: var(--radius-sm);
-  font-size: 0.7rem;
-  font-weight: 600;
+.footer-dim {
+  color: #64748B;
 }
 
-.stat-card-sparkline {
-  width: 80px;
-  height: 32px;
+.footer-right {
+  color: #CBD5E1;
+  font-family: var(--font-mono, monospace);
+  font-weight: 500;
+}
+
+.footer-highlight {
+  color: #22D3EE;
+  font-size: 0.74rem;
+  font-weight: 500;
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Sidebar from './components/Sidebar/Sidebar';
 import TopNavbar from './components/TopNavbar/TopNavbar';
 import AddExpenseModal from './components/AddExpenseModal/AddExpenseModal';
@@ -24,6 +24,9 @@ const SettingsPage = lazy(() => import('./pages/Settings/SettingsPage'));
 
 // V2 Protected Layout with TopNavbar
 const ProtectedLayout = ({ handleAddExpense, toast, setToast, showModal, setShowModal, handleSaveExpense }) => {
+  const location = useLocation();
+  const isDashboard = location.pathname === '/';
+
   return (
     <div className="app-layout">
       {toast.show && (
@@ -37,8 +40,8 @@ const ProtectedLayout = ({ handleAddExpense, toast, setToast, showModal, setShow
       <Sidebar onAddExpense={handleAddExpense} />
       <TopNavbar />
 
-      <main className="main-content">
-        <div className="main-content__inner">
+      <main className="main-content" style={isDashboard ? { paddingTop: '24px' } : {}}>
+        <div className="main-content__inner" style={isDashboard ? { padding: '0 28px 40px 28px', maxWidth: '100%' } : {}}>
           <ErrorBoundary>
             <Suspense fallback={
               <div className="empty-state" style={{ height: '50vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>

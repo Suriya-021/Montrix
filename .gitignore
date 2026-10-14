@@ -53,3 +53,6 @@ dist-ssr/
 Thumbs.db
 desktop.ini
 *.local
+
+# ===== Design Exports =====
+stitch_export/

@@ -1,88 +1,69 @@
 import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { 
-  LayoutDashboard, Receipt, BarChart3, Settings, Plus, LogOut, 
-  Target, Calendar, Wallet, Zap, CreditCard
+  LayoutDashboard, Receipt, Repeat, Wallet, 
+  Target, BarChart3, Settings, Command
 } from 'lucide-react';
-import { useAuth } from '../../hooks/useAuth';
-import { useCurrency } from '../../context/CurrencyContext';
 import './Sidebar.css';
 
 /**
- * V2 Sidebar Component
- * Premium collapsible navigation with gradient accents.
+ * Montrix Reference Sidebar Component
+ * Matches the reference dark fintech aesthetic pixel-for-pixel.
  */
-function Sidebar({ onAddExpense }) {
-  const { logout } = useAuth();
-  const navigate = useNavigate();
-  const { currency, changeCurrency } = useCurrency();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
-  const currencies = ['INR', 'USD', 'EUR', 'GBP', 'AUD', 'CAD', 'JPY'];
-
+function Sidebar({ onAddExpense, onOpenCommand }) {
   const navItems = [
-    { to: '/', icon: LayoutDashboard, label: 'Overview', end: true },
-    { to: '/expenses', icon: Receipt, label: 'Transactions' },
+    { to: '/', icon: LayoutDashboard, label: 'Dashboard', end: true },
+    { to: '/expenses', icon: Receipt, label: 'Expenses' },
+    { to: '/subscriptions', icon: Repeat, label: 'Subscriptions' },
     { to: '/income', icon: Wallet, label: 'Income' },
+    { to: '/planning', icon: Target, label: 'Planning' },
     { to: '/analytics', icon: BarChart3, label: 'Analytics' },
-    { to: '/planning', icon: Target, label: 'Budgets' },
-    { to: '/subscriptions', icon: CreditCard, label: 'Bills' },
     { to: '/settings', icon: Settings, label: 'Settings' },
   ];
 
   return (
     <aside className="sidebar">
-      {/* Logo */}
+      {/* Brand Header */}
       <div className="sidebar-logo">
-        <div className="sidebar-logo__icon">
-          <Zap size={20} />
+        <div className="sidebar-logo__icon-hex">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L20.66 7V17L12 22L3.34 17V7L12 2Z" stroke="#9D74FF" strokeWidth="2" strokeLinejoin="round" fill="rgba(157, 116, 255, 0.15)"/>
+            <path d="M12 6L16.33 8.5V13.5L12 16L7.67 13.5V8.5L12 6Z" fill="#9D74FF"/>
+          </svg>
         </div>
-        <div className="sidebar-logo__text">
-          <span className="logo-mon">Mon</span>
-          <span className="logo-trix">trix</span>
+        <div className="sidebar-logo__meta">
+          <span className="sidebar-logo__brand">Montrix</span>
+          <span className="sidebar-logo__version">v2.1</span>
         </div>
       </div>
 
-      {/* Navigation */}
+      {/* Nav List */}
       <nav className="sidebar-nav">
-        {navItems.map(item => (
+        {navItems.map((item) => (
           <NavLink 
             key={item.to}
             to={item.to} 
             end={item.end}
             className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}
           >
-            <item.icon className="nav-icon" />
+            <item.icon className="nav-icon" size={18} />
             <span className="nav-text">{item.label}</span>
           </NavLink>
         ))}
       </nav>
 
-      {/* Bottom Section */}
+      {/* Bottom Command Trigger */}
       <div className="sidebar-bottom">
-        <div className="sidebar-currency">
-          <select 
-            value={currency} 
-            onChange={(e) => changeCurrency(e.target.value)}
-          >
-            {currencies.map(c => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-        </div>
-
-        <button className="add-expense-btn" onClick={onAddExpense}>
-          <Plus size={18} />
-          <span className="btn-text">Add Expense</span>
-        </button>
-
-        <button className="logout-btn" onClick={handleLogout}>
-          <LogOut size={18} />
-          <span>Logout</span>
+        <button 
+          className="quick-command-btn" 
+          onClick={onOpenCommand || onAddExpense}
+          title="Open Quick Command (⌘K)"
+        >
+          <div className="quick-command-left">
+            <Command size={15} />
+            <span>Quick Command</span>
+          </div>
+          <kbd className="quick-command-badge">⌘K</kbd>
         </button>
       </div>
     </aside>

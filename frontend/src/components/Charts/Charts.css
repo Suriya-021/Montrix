@@ -1,155 +1,339 @@
-/* Charts.css */
+/* Charts.css — Montrix Reference Charts Styling */
 
-.chart-card {
-  padding: var(--card-padding);
-  border-radius: var(--card-radius);
-  background: rgba(10, 10, 18, 0.85);
-  border: 1px solid var(--card-border);
+/* Cash Flow Velocity Card */
+.chart-card-ref {
+  background: #0C0C12;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 20px 22px 16px 22px;
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  margin-bottom: 20px;
 }
 
-.chart-header {
-  margin-bottom: var(--space-2);
+.chart-card-ref__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
 }
 
-.flex-between {
+.chart-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chart-title-text {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.chart-activity-icon {
+  color: #9D74FF;
+}
+
+.chart-subtitle-text {
+  font-size: 0.8rem;
+  color: #64748B;
+  margin: 2px 0 0 0;
+}
+
+.period-pill-group {
+  display: flex;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.period-pill-btn {
+  background: transparent;
+  border: none;
+  color: #94A3B8;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.period-pill-btn.active {
+  background: #9D74FF;
+  color: #07070B;
+}
+
+.period-pill-btn:hover:not(.active) {
+  color: #FFFFFF;
+}
+
+/* Sub-bar with Legends & Net Surge */
+.chart-subbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  font-size: 0.78rem;
+  color: #94A3B8;
+}
+
+.chart-legend-pills {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.chart-legend-entry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-box {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.legend-box.cyan {
+  background: #22D3EE;
+}
+
+.legend-box.purple {
+  background: #9D74FF;
+}
+
+.chart-net-surge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #22D3EE;
+  font-family: var(--font-mono, monospace);
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+/* Tooltip Inspection Card */
+.ref-chart-tooltip {
+  background: #09090F;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 10px 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+  min-width: 190px;
+}
+
+.ref-chart-tooltip__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: #CBD5E1;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ref-chart-tooltip__badge {
+  background: rgba(34, 211, 238, 0.15);
+  color: #22D3EE;
+  font-size: 0.68rem;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.ref-chart-tooltip__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.76rem;
+}
+
+.ref-tooltip-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.chart-title {
-  font-size: 1.125rem;
+.ref-tooltip-row.total {
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  padding-top: 4px;
+  margin-top: 2px;
+}
+
+.ref-tooltip-label {
+  color: #94A3B8;
+}
+
+.ref-tooltip-val.green {
+  color: #10B981;
+}
+
+.ref-tooltip-val.red {
+  color: #F87171;
+}
+
+.ref-tooltip-val.cyan {
+  color: #22D3EE;
+}
+
+/* Chart Footer */
+.chart-card-ref__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  padding-top: 12px;
+  margin-top: 6px;
+  font-size: 0.76rem;
+}
+
+.status-momentum {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #94A3B8;
+}
+
+.check-icon-green {
+  color: #10B981;
+}
+
+.variance-report-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #9D74FF;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.variance-report-link:hover {
+  color: #C084FC;
+}
+
+/* =======================================
+   Category Donut Card
+   ======================================= */
+.category-donut-ref {
+  background: #0C0C12;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 20px 22px;
+  margin-bottom: 20px;
+}
+
+.category-donut-ref__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.category-title {
+  font-size: 1.05rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: #FFFFFF;
   margin: 0;
 }
 
-.chart-link {
-  font-size: 0.875rem;
-  color: var(--text-muted);
-  text-decoration: none;
-  transition: color var(--transition-base);
+.category-subtitle {
+  font-size: 0.8rem;
+  color: #64748B;
+  margin: 2px 0 0 0;
 }
 
-.chart-link:hover {
-  color: var(--accent-cyan);
-}
-
-/* Tooltip Styles */
-.chart-tooltip {
-  background: rgba(8, 8, 15, 0.95); /* Pure black glass */
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
-  padding: var(--space-3) var(--space-4);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(10px);
-}
-
-.chart-tooltip-label {
-  color: var(--text-secondary);
-  font-size: 0.875rem;
-  margin-top: 0;
-  margin-bottom: var(--space-2);
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-  padding-bottom: var(--space-1);
-}
-
-.chart-tooltip-item {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--space-4);
-  margin-bottom: var(--space-1);
-  font-size: 0.875rem;
-}
-
-.chart-tooltip-name {
+.this-month-pill {
+  font-size: 0.72rem;
   font-weight: 500;
+  color: #94A3B8;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 3px 8px;
+  border-radius: 6px;
 }
 
-/* Donut Chart Specific */
-.donut-container {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
-}
-
-.donut-chart-wrapper {
+.donut-center-stage {
   position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
+  margin: 4px 0 12px 0;
 }
 
-.chart-center-label {
+.donut-center-content {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   pointer-events: none;
 }
 
-.center-label-text {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  line-height: 1.2;
-  margin-top: 4px;
+.donut-center-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #64748B;
+  letter-spacing: 0.5px;
 }
 
-.center-label-value {
+.donut-center-amt {
   font-size: 1.25rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: #FFFFFF;
+  line-height: 1.2;
 }
 
-/* Legend Styles */
-.chart-legend {
+.within-budget-badge {
+  font-size: 0.62rem;
+  color: #10B981;
+  background: rgba(16, 185, 129, 0.15);
+  padding: 1px 6px;
+  border-radius: 9999px;
+  margin-top: 2px;
+  font-weight: 600;
+}
+
+.donut-legend-grid {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  padding-top: 14px;
 }
 
-.chart-legend__item {
+.donut-legend-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--space-2) 0;
-  border-bottom: 1px solid rgba(255,255,255,0.03);
+  font-size: 0.78rem;
 }
 
-.chart-legend__item:last-child {
-  border-bottom: none;
-}
-
-.legend-left, .legend-right {
+.donut-legend-left {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: 8px;
 }
 
-.chart-legend__dot {
-  width: 8px;
-  height: 8px;
+.legend-dot {
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
 }
 
-.legend-name {
-  font-size: 0.875rem;
-  color: var(--text-secondary);
+.legend-name-text {
+  color: #CBD5E1;
 }
 
-.legend-value {
-  font-size: 0.875rem;
-  color: var(--text-primary);
-  font-weight: 500;
-}
-
-.legend-percent {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  width: 32px;
-  text-align: right;
+.donut-legend-val {
+  color: #94A3B8;
+  font-size: 0.76rem;
 }

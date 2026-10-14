@@ -1,0 +1,237 @@
+/* ==========================================================================
+   IncomePage.css — Stitch Revenue & Cash Inflow Streams Style
+   ========================================================================== */
+
+.income-view {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  position: relative;
+}
+
+.income-halo {
+  position: absolute;
+  top: -48px;
+  left: 20%;
+  width: 700px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(93, 230, 255, 0.08) 0%, transparent 70%);
+  border-radius: 9999px;
+  filter: blur(48px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.income-topbar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-bottom: var(--space-4);
+  position: relative;
+  z-index: 1;
+}
+
+@media (min-width: 1024px) {
+  .income-topbar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.income-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: var(--font-mono);
+  color: #958ea0;
+}
+
+.income-breadcrumb .accent {
+  color: #5de6ff;
+  font-weight: 600;
+}
+
+.income-live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: #2a2a2d;
+  color: #27e0a9;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.income-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: #27e0a9;
+  box-shadow: 0 0 8px #27e0a9;
+  animation: pulse-live 2s infinite ease-in-out;
+}
+
+.income-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.income-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #e5e1e5;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.income-subtitle {
+  font-size: 12px;
+  color: #958ea0;
+  font-family: var(--font-mono);
+}
+
+/* KPI 4-Card Grid */
+.income-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+@media (min-width: 640px) {
+  .income-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .income-kpi-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.income-kpi-card {
+  border-radius: 14px;
+  background: rgba(28, 27, 30, 0.9);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 16px 18px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all var(--transition-fast);
+}
+
+.income-kpi-card:hover {
+  background: #201f22;
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+.income-kpi-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.income-kpi-card-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #958ea0;
+  font-weight: 600;
+}
+
+.income-kpi-card-val {
+  font-family: var(--font-mono);
+  font-size: 26px;
+  font-weight: 700;
+  color: #5de6ff;
+  letter-spacing: -0.02em;
+  margin: 8px 0 4px;
+}
+
+/* Split Main Content */
+.income-workspace {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .income-workspace {
+    grid-template-columns: 1fr 380px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .income-workspace {
+    grid-template-columns: 1fr 420px;
+  }
+}
+
+.income-table-card {
+  border-radius: 14px;
+  background: rgba(28, 27, 30, 0.9);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.income-table-toolbar {
+  padding: 12px 16px;
+  background: rgba(14, 14, 17, 0.6);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+@media (min-width: 640px) {
+  .income-table-toolbar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+/* Right Inflow Log Card / Inspector */
+.income-inspector-card {
+  position: sticky;
+  top: 80px;
+  border-radius: 14px;
+  background: rgba(28, 27, 30, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(93, 230, 255, 0.25);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+}
+
+.income-inspector-glow {
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 140px;
+  height: 140px;
+  background: rgba(93, 230, 255, 0.12);
+  border-radius: 9999px;
+  filter: blur(28px);
+  pointer-events: none;
+}

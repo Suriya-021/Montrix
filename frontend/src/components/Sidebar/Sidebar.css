@@ -1,5 +1,5 @@
 /* ================================================
-   V2 Sidebar — Collapsible Premium Navigation
+   Montrix Reference Sidebar — Dark Obsidian Fintech
    ================================================ */
 
 .sidebar {
@@ -7,65 +7,63 @@
   left: 0;
   top: 0;
   bottom: 0;
-  width: var(--sidebar-width);
-  background: var(--card-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border-right: 1px solid var(--card-border);
+  width: var(--sidebar-width, 220px);
+  background: #08080C;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
   flex-direction: column;
   z-index: 50;
-  transition: width var(--transition-slow);
+  transition: width 0.25s ease;
   overflow: hidden;
 }
 
-/* --- Logo --- */
+/* --- Logo Header --- */
 .sidebar-logo {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-6) var(--space-5);
-  min-height: 64px;
-  overflow: hidden;
+  gap: 10px;
+  padding: 24px 18px 20px 18px;
+  min-height: 68px;
 }
 
-.sidebar-logo__icon {
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-md);
-  background: var(--accent-gradient);
+.sidebar-logo__icon-hex {
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 
-.sidebar-logo__icon svg {
-  color: white;
+.sidebar-logo__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.sidebar-logo__text {
-  font-size: 20px;
+.sidebar-logo__brand {
+  font-size: 1.15rem;
   font-weight: 700;
-  white-space: nowrap;
-  overflow: hidden;
+  color: #FFFFFF;
+  letter-spacing: -0.02em;
 }
 
-.logo-mon {
-  color: var(--text-primary);
+.sidebar-logo__version {
+  font-size: 0.68rem;
+  font-family: var(--font-mono, monospace);
+  color: #94A3B8;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-weight: 500;
 }
 
-.logo-trix {
-  color: var(--accent-cyan);
-}
-
-/* --- Navigation --- */
+/* --- Navigation List --- */
 .sidebar-nav {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
-  padding: var(--space-2) var(--space-3);
+  gap: 4px;
+  padding: 10px 12px;
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -73,212 +71,120 @@
 .nav-item {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
-  color: var(--text-muted);
-  font-size: 14px;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  color: #94A3B8;
+  font-size: 0.88rem;
   font-weight: 500;
   text-decoration: none;
   cursor: pointer;
-  transition: all var(--transition-base);
+  transition: all 0.18s ease;
   white-space: nowrap;
-  overflow: hidden;
-  position: relative;
 }
 
 .nav-item:hover {
-  color: var(--text-secondary);
+  color: #F1F5F9;
   background: rgba(255, 255, 255, 0.04);
 }
 
+/* Solid Purple Active Pill (Exactly like reference image) */
 .nav-item.active {
-  color: var(--text-primary);
-  background: rgba(99, 102, 241, 0.08);
+  background: #9D74FF;
+  color: #07070B;
+  font-weight: 600;
+  box-shadow: 0 4px 20px rgba(157, 116, 255, 0.25);
 }
 
-.nav-item.active::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 8px;
-  bottom: 8px;
-  width: 3px;
-  border-radius: 0 2px 2px 0;
-  background: var(--accent-gradient);
+.nav-item.active .nav-icon {
+  color: #07070B;
+  stroke-width: 2.3px;
 }
 
 .nav-icon {
-  width: 20px;
-  height: 20px;
   flex-shrink: 0;
+  color: inherit;
+  transition: transform 0.2s ease;
+}
+
+.nav-item:hover .nav-icon {
+  transform: scale(1.05);
 }
 
 .nav-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 0.88rem;
 }
 
-/* --- Sidebar Bottom --- */
+/* --- Bottom Command Trigger --- */
 .sidebar-bottom {
-  padding: var(--space-4) var(--space-3);
-  border-top: 1px solid var(--card-border);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+  padding: 14px 12px 18px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
 }
 
-.sidebar-currency {
-  padding: 0 var(--space-2);
-  margin-bottom: var(--space-2);
-}
-
-.sidebar-currency select {
+.quick-command-btn {
   width: 100%;
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text-primary);
-  border: 1px solid var(--card-border);
-  font-family: var(--font-body);
-  font-size: 13px;
-  cursor: pointer;
-  transition: border-color var(--transition-base);
-}
-
-.sidebar-currency select:focus {
-  border-color: var(--accent-blue);
-  outline: none;
-}
-
-.add-expense-btn {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  width: 100%;
-  padding: var(--space-3);
-  background: var(--accent-gradient);
-  color: white;
-  border: none;
-  border-radius: var(--radius-md);
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 600;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  color: #94A3B8;
+  font-size: 0.8rem;
   cursor: pointer;
-  transition: all var(--transition-base);
-  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.25);
-  overflow: hidden;
-  white-space: nowrap;
+  transition: all 0.2s ease;
 }
 
-.add-expense-btn:hover {
-  box-shadow: 0 6px 24px rgba(99, 102, 241, 0.35);
-  transform: translateY(-1px);
+.quick-command-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #FFFFFF;
 }
 
-.logout-btn {
-  background: none;
-  border: none;
+.quick-command-left {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  width: 100%;
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
-  color: var(--text-muted);
-  font-family: var(--font-body);
-  font-size: 14px;
-  cursor: pointer;
-  transition: all var(--transition-base);
+  gap: 8px;
 }
 
-.logout-btn:hover {
-  color: var(--error);
-  background: rgba(239, 68, 68, 0.06);
+.quick-command-badge {
+  font-size: 0.7rem;
+  font-family: var(--font-mono, monospace);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 2px 5px;
+  border-radius: 4px;
+  color: #CBD5E1;
 }
 
-/* === Tablet: Collapsed sidebar === */
-@media (max-width: 1023px) {
+/* Responsive */
+@media (max-width: 1024px) {
   .sidebar {
-    width: var(--sidebar-collapsed);
+    width: 68px;
   }
-
-  .sidebar-logo__text,
+  .sidebar-logo__brand,
+  .sidebar-logo__version,
   .nav-text,
-  .btn-text,
-  .sidebar-currency {
+  .quick-command-badge,
+  .quick-command-left span {
     display: none;
   }
-
+  .sidebar-logo {
+    justify-content: center;
+    padding: 18px 0;
+  }
   .nav-item {
     justify-content: center;
-    padding: var(--space-3);
+    padding: 12px 0;
   }
-
-  .add-expense-btn {
-    padding: var(--space-3);
-  }
-
-  .add-expense-btn .btn-text {
-    display: none;
-  }
-
-  .logout-btn span {
-    display: none;
-  }
-
-  .logout-btn {
+  .quick-command-btn {
     justify-content: center;
   }
 }
 
-/* === Mobile: Bottom nav bar === */
-@media (max-width: 767px) {
+@media (max-width: 768px) {
   .sidebar {
-    position: fixed;
-    top: auto;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    height: 64px;
-    flex-direction: row;
-    border-right: none;
-    border-top: 1px solid var(--card-border);
-    background: var(--card-bg);
-    backdrop-filter: blur(20px);
-  }
-
-  .sidebar-logo,
-  .sidebar-bottom,
-  .sidebar-currency {
-    display: none;
-  }
-
-  .sidebar-nav {
-    flex-direction: row;
-    justify-content: space-around;
-    align-items: center;
-    padding: 0;
-    gap: 0;
-    width: 100%;
-  }
-
-  .nav-item {
-    flex-direction: column;
-    gap: 2px;
-    padding: var(--space-2);
-    font-size: 10px;
-    border-radius: var(--radius-sm);
-  }
-
-  .nav-item.active::before {
-    display: none;
-  }
-
-  .nav-icon {
-    width: 22px;
-    height: 22px;
+    display: none; /* Mobile bottom tab handled separately */
   }
 }
