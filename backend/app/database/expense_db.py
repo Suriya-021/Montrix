@@ -14,6 +14,7 @@ def _expense_to_dict(e):
         "category": e.category, 
         "description": e.description, 
         "date": str(e.date) if e.date else "", 
+        "receipt_url": getattr(e, 'receipt_url', None) or None,
         "created_at": str(e.created_at) if getattr(e, 'created_at', None) else str(e.id)
     }
 
@@ -91,7 +92,7 @@ def get_expense_by_id(expense_id: int, user_id: int):
 
 from app.database.date_utils import parse_date
 
-def create_expense(user_id: int, amount: float, category: str, description: str, date: str):
+def create_expense(user_id: int, amount: float, category: str, description: str, date: str, receipt_url: Optional[str] = None):
     db = SessionLocal()
     try:
         new_expense = Expense(
@@ -99,7 +100,8 @@ def create_expense(user_id: int, amount: float, category: str, description: str,
             amount=amount, 
             category=category, 
             description=description, 
-            date=parse_date(date)
+            date=parse_date(date),
+            receipt_url=receipt_url
         )
         db.add(new_expense)
         db.commit()
@@ -120,7 +122,7 @@ def delete_expense(expense_id: int, user_id: int):
     finally:
         db.close()
 
-def update_expense(expense_id: int, user_id: int, amount: float, category: str, description: str, date: str):
+def update_expense(expense_id: int, user_id: int, amount: float, category: str, description: str, date: str, receipt_url: Optional[str] = None):
     db = SessionLocal()
     try:
         expense = db.query(Expense).filter(Expense.id == expense_id, Expense.user_id == user_id).first()
@@ -129,9 +131,49 @@ def update_expense(expense_id: int, user_id: int, amount: float, category: str, 
             expense.category = category
             expense.description = description
             expense.date = parse_date(date)
+            if receipt_url is not None:
+                expense.receipt_url = receipt_url
             db.commit()
             return True
         return False
+    finally:
+        db.close()
+
+def attach_receipt(expense_id: int, user_id: int, receipt_url: str):
+    db = SessionLocal()
+    try:
+        expense = db.query(Expense).filter(Expense.id == expense_id, Expense.user_id == user_id).first()
+        if expense:
+            expense.receipt_url = receipt_url
+            db.commit()
+            return True
+        return False
+    finally:
+        db.close()
+
+def remove_receipt(expense_id: int, user_id: int):
+    db = SessionLocal()
+    try:
+        expense = db.query(Expense).filter(Expense.id == expense_id, Expense.user_id == user_id).first()
+        if expense:
+            expense.receipt_url = None
+            db.commit()
+            return True
+        return False
+    finally:
+        db.close()
+
+def ensure_expense_columns():
+    db = SessionLocal()
+    try:
+        from sqlalchemy import text
+        res = db.execute(text("PRAGMA table_info(expenses)")).fetchall()
+        cols = [r[1] for r in res]
+        if "receipt_url" not in cols:
+            db.execute(text("ALTER TABLE expenses ADD COLUMN receipt_url VARCHAR(500)"))
+            db.commit()
+    except Exception as err:
+        print("Note on migration check:", err)
     finally:
         db.close()
 

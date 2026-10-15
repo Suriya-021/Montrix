@@ -14,12 +14,15 @@ from app.routes.insights import router as insights_router
 from app.routes.categories import router as categories_router
 from app.routes import auth
 
+from app.database.expense_db import ensure_expense_columns
+
 # This "lifespan" function runs exactly once when the server starts up,
 # and again when it shuts down. We use it to prepare things.
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("Initializing database...")
     Base.metadata.create_all(bind=engine)
+    ensure_expense_columns()
     print("Database ready!")
     yield
     print("Shutting down server...")
@@ -37,6 +40,13 @@ app = FastAPI(
 )
 
 import os
+from fastapi.staticfiles import StaticFiles
+
+# Ensure uploads directory structure exists and mount static handler
+UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "uploads")
+RECEIPTS_DIR = os.path.join(UPLOAD_DIR, "receipts")
+os.makedirs(RECEIPTS_DIR, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 # CORS Configuration
 # In production, we don't want to allow all origins ("*"). We read allowed origins from the environment.

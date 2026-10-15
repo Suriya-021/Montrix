@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Check, Loader2 } from 'lucide-react';
+import { X, Plus, Check, Loader2, Paperclip } from 'lucide-react';
 import { categoryService } from '../../services/categoryService';
 import './AddExpenseModal.css';
 
@@ -19,6 +19,7 @@ function AddExpenseModal({ isOpen, onClose, onAdd, expenseToEdit }) {
   const [newCatColor, setNewCatColor] = useState('#8B5CF6');
   const [catError, setCatError] = useState('');
   const [isCreatingCat, setIsCreatingCat] = useState(false);
+  const [receiptFile, setReceiptFile] = useState(null);
 
   const [formData, setFormData] = useState({
     amount: '',
@@ -47,6 +48,7 @@ function AddExpenseModal({ isOpen, onClose, onAdd, expenseToEdit }) {
         description: expenseToEdit.description,
         date: new Date(expenseToEdit.date).toISOString().split('T')[0]
       });
+      setReceiptFile(null);
     } else {
       setFormData({
         amount: '',
@@ -54,6 +56,7 @@ function AddExpenseModal({ isOpen, onClose, onAdd, expenseToEdit }) {
         description: '',
         date: new Date().toISOString().split('T')[0]
       });
+      setReceiptFile(null);
     }
   }, [expenseToEdit, isOpen, categories.length]);
 
@@ -112,7 +115,8 @@ function AddExpenseModal({ isOpen, onClose, onAdd, expenseToEdit }) {
     onAdd({
       ...formData,
       amount: Number(formData.amount),
-      id: expenseToEdit ? expenseToEdit.id : undefined
+      id: expenseToEdit ? expenseToEdit.id : undefined,
+      receiptFile
     });
     
     // Reset the form
@@ -256,6 +260,59 @@ function AddExpenseModal({ isOpen, onClose, onAdd, expenseToEdit }) {
               value={formData.date}
               onChange={handleChange}
             />
+          </div>
+
+          {/* Receipt Attachment Field */}
+          <div className="form-group">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+              <label className="form-label" style={{ margin: 0 }}>Receipt / Proof Document (Optional)</label>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>PNG, JPG, PDF &lt; 10MB</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <input
+                type="file"
+                id="modal-receipt-input"
+                accept="image/png,image/jpeg,image/webp,application/pdf"
+                onChange={(e) => setReceiptFile(e.target.files[0] || null)}
+                style={{ display: 'none' }}
+              />
+              <label 
+                htmlFor="modal-receipt-input"
+                className="btn btn--secondary"
+                style={{ 
+                  cursor: 'pointer', 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  gap: '6px', 
+                  fontSize: '0.8rem',
+                  padding: '0.5rem 0.85rem'
+                }}
+              >
+                <Paperclip size={14} />
+                {receiptFile ? 'Change File' : (expenseToEdit?.receipt_url ? 'Replace Receipt' : 'Attach File')}
+              </label>
+
+              {receiptFile ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: '#27e0a9' }}>
+                  <Check size={14} />
+                  <span style={{ maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {receiptFile.name}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setReceiptFile(null)}
+                    style={{ background: 'none', border: 'none', color: '#ffb4ab', cursor: 'pointer', padding: 2, display: 'inline-flex' }}
+                    title="Remove file"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ) : expenseToEdit?.receipt_url ? (
+                <span style={{ fontSize: '0.8rem', color: '#5de6ff' }}>
+                  ✓ Existing receipt attached
+                </span>
+              ) : null}
+            </div>
           </div>
 
           {/* Action Buttons */}

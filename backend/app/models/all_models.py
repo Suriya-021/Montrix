@@ -18,6 +18,7 @@ class Expense(Base):
     category = Column(String(50), nullable=False, index=True)
     description = Column(String(255))
     date = Column(Date, nullable=False, index=True)
+    receipt_url = Column(String(500), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 class Budget(Base):

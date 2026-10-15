@@ -283,4 +283,42 @@ def test_csv_import_duplicate_skipping(client, test_user):
     assert res2.json()["imported_count"] == 0
     assert res2.json()["skipped_count"] == 1
 
+def test_upload_and_delete_receipt(client, test_user):
+    # 1. Create an expense
+    create_res = client.post("/api/expenses/", json={
+        "amount": 450.0,
+        "category": "Food",
+        "description": "Starbucks Coffee",
+        "date": "2026-10-14"
+    }, headers=test_user["headers"])
+    assert create_res.status_code == 200
+    expense_id = create_res.json()["id"]
+
+    # 2. Upload valid receipt image (dummy png)
+    fake_png = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15c4"
+    files = {"file": ("receipt.png", fake_png, "image/png")}
+    upload_res = client.post(f"/api/expenses/{expense_id}/receipt", files=files, headers=test_user["headers"])
+    assert upload_res.status_code == 200
+    updated = upload_res.json()
+    assert updated["receipt_url"] is not None
+    assert updated["receipt_url"].startswith("/uploads/receipts/")
+    receipt_path = updated["receipt_url"]
+
+    # 3. Verify static file retrieval
+    static_res = client.get(receipt_path)
+    assert static_res.status_code == 200
+    assert static_res.content == fake_png
+
+    # 4. Upload invalid file extension rejection
+    bad_files = {"file": ("virus.exe", b"malicious", "application/octet-stream")}
+    bad_res = client.post(f"/api/expenses/{expense_id}/receipt", files=bad_files, headers=test_user["headers"])
+    assert bad_res.status_code == 400
+    assert "Invalid file type" in bad_res.json()["detail"]
+
+    # 5. Delete the receipt
+    del_res = client.delete(f"/api/expenses/{expense_id}/receipt", headers=test_user["headers"])
+    assert del_res.status_code == 200
+    assert del_res.json()["receipt_url"] is None
+
+
 

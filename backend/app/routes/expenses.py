@@ -134,3 +134,76 @@ def update_expense(expense_id: int, expense: ExpenseCreate, current_user: dict =
 @router.delete("/{expense_id}")
 def delete_expense(expense_id: int, current_user: dict = Depends(get_current_user)):
     return expense_service.delete_expense(expense_id, current_user['id'])
+
+import os
+import uuid
+
+ALLOWED_RECEIPT_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".pdf"}
+MAX_RECEIPT_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+
+@router.post("/{expense_id}/receipt", response_model=ExpenseResponse)
+def upload_expense_receipt(
+    expense_id: int,
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """Upload a receipt/invoice document (image or PDF) and attach to expense."""
+    expense = expense_service.get_expense(expense_id, current_user['id'])
+    if not expense:
+        raise HTTPException(status_code=404, detail="Expense not found")
+
+    ext = os.path.splitext(file.filename)[1].lower() if file.filename else ""
+    if ext not in ALLOWED_RECEIPT_EXTENSIONS:
+        allowed_list = ", ".join(sorted(ALLOWED_RECEIPT_EXTENSIONS))
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid file type '{ext}'. Allowed extensions: {allowed_list}"
+        )
+
+    file_bytes = file.file.read()
+    if len(file_bytes) > MAX_RECEIPT_FILE_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail="File size exceeds maximum allowed limit of 10MB"
+        )
+
+    # Save to uploads/receipts/
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    target_dir = os.path.join(os.path.dirname(base_dir), "uploads", "receipts")
+    os.makedirs(target_dir, exist_ok=True)
+
+    unique_filename = f"receipt_{expense_id}_{uuid.uuid4().hex[:8]}{ext}"
+    filepath = os.path.join(target_dir, unique_filename)
+
+    with open(filepath, "wb") as f:
+        f.write(file_bytes)
+
+    # Clean up old receipt file if one existed
+    old_receipt_url = expense.get("receipt_url")
+    if old_receipt_url and old_receipt_url.startswith("/uploads/"):
+        old_filepath = os.path.join(os.path.dirname(base_dir), old_receipt_url.lstrip("/"))
+        if os.path.exists(old_filepath):
+            try:
+                os.remove(old_filepath)
+            except Exception:
+                pass
+
+    receipt_url = f"/uploads/receipts/{unique_filename}"
+    return expense_service.attach_receipt(expense_id, current_user['id'], receipt_url)
+
+@router.delete("/{expense_id}/receipt", response_model=ExpenseResponse)
+def delete_expense_receipt(
+    expense_id: int,
+    current_user: dict = Depends(get_current_user)
+):
+    """Remove attached receipt from expense and clean up file on disk."""
+    updated, old_url = expense_service.remove_receipt(expense_id, current_user['id'])
+    if old_url and old_url.startswith("/uploads/"):
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        old_filepath = os.path.join(os.path.dirname(base_dir), old_url.lstrip("/"))
+        if os.path.exists(old_filepath):
+            try:
+                os.remove(old_filepath)
+            except Exception:
+                pass
+    return updated

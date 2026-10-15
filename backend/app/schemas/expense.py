@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 from datetime import date, datetime
-from typing import List
+from typing import List, Optional
 
 # These are the exact 10 categories we locked in during the blueprint phase.
 ALLOWED_CATEGORIES = [
@@ -17,6 +17,7 @@ class ExpenseBase(BaseModel):
     category: str = Field(..., min_length=1, max_length=50, description="Expense category")
     description: str = Field(..., min_length=1, max_length=200)
     date: date
+    receipt_url: Optional[str] = None
 
     # Custom validator ensuring category is not empty or whitespace
     @field_validator('category')

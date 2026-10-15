@@ -109,5 +109,29 @@ export const expenseService = {
       method: 'POST',
       body: formData,
     });
+  },
+
+  async uploadReceipt(id, file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    return await apiFetch(`/expenses/${id}/receipt`, {
+      method: 'POST',
+      body: formData,
+    });
+  },
+
+  async deleteReceipt(id) {
+    return await apiFetch(`/expenses/${id}/receipt`, {
+      method: 'DELETE',
+    });
+  },
+
+  getReceiptFullUrl(receiptUrl) {
+    if (!receiptUrl) return null;
+    if (receiptUrl.startsWith('http://') || receiptUrl.startsWith('https://')) {
+      return receiptUrl;
+    }
+    const backendRoot = BASE_URL.replace(/\/api\/?$/, '');
+    return `${backendRoot}${receiptUrl.startsWith('/') ? '' : '/'}${receiptUrl}`;
   }
 };

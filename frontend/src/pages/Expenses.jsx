@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { 
   Trash2, Receipt, AlertCircle, Loader2, Pencil, 
   Search, TrendingDown, Calendar, Tag, Download, Upload,
   ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown,
   Filter, SlidersHorizontal, CheckCircle2, ShieldCheck,
   AlertTriangle, Copy, Check, FileText, ArrowRight, X, Clock,
-  CreditCard, DollarSign, Activity, Sparkles, Plus
+  CreditCard, DollarSign, Activity, Sparkles, Plus, Paperclip, Eye, ExternalLink
 } from 'lucide-react';
 import { expenseService } from '../services/expenseService';
 import { categoryService } from '../services/categoryService';
@@ -83,6 +83,9 @@ function Expenses() {
   // Inspector selection
   const [selectedExpenseId, setSelectedExpenseId] = useState(null);
   const [copiedUuid, setCopiedUuid] = useState(false);
+  const [isUploadingReceipt, setIsUploadingReceipt] = useState(false);
+  const [receiptLightboxUrl, setReceiptLightboxUrl] = useState(null);
+  const fileInputRef = useRef(null);
 
   // Loading & error
   const [isLoading, setIsLoading] = useState(true);
@@ -235,9 +238,46 @@ function Expenses() {
     }
   };
 
+  const handleUploadReceipt = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !activeExpense) return;
+    
+    if (file.size > 10 * 1024 * 1024) {
+      setToast({ show: true, message: 'Receipt size cannot exceed 10MB', type: 'error' });
+      return;
+    }
+
+    try {
+      setIsUploadingReceipt(true);
+      await expenseService.uploadReceipt(activeExpense.id, file);
+      setToast({ show: true, message: 'Receipt proof attached to ledger!', type: 'success' });
+      loadExpenses();
+    } catch (err) {
+      setToast({ show: true, message: err.message || 'Failed to upload receipt', type: 'error' });
+    } finally {
+      setIsUploadingReceipt(false);
+      if (e.target) e.target.value = '';
+    }
+  };
+
+  const handleDeleteReceipt = async (expenseId) => {
+    if (!window.confirm('Are you sure you want to remove this attached receipt?')) return;
+    try {
+      await expenseService.deleteReceipt(expenseId);
+      setToast({ show: true, message: 'Receipt detached from expense', type: 'success' });
+      loadExpenses();
+    } catch (err) {
+      setToast({ show: true, message: err.message || 'Failed to remove receipt', type: 'error' });
+    }
+  };
+
   const handleSaveEdit = async (expenseData) => {
     try {
-      await expenseService.update(expenseData.id, expenseData);
+      const { receiptFile, ...cleanData } = expenseData;
+      await expenseService.update(cleanData.id, cleanData);
+      if (receiptFile) {
+        await expenseService.uploadReceipt(cleanData.id, receiptFile);
+      }
       setToast({ show: true, message: 'Expense record updated successfully!', type: 'success' });
       setEditingExpense(null);
       loadExpenses();
@@ -249,7 +289,11 @@ function Expenses() {
 
   const handleSaveNewExpense = async (expenseData) => {
     try {
-      await expenseService.create(expenseData);
+      const { receiptFile, ...cleanData } = expenseData;
+      const created = await expenseService.create(cleanData);
+      if (receiptFile && created?.id) {
+        await expenseService.uploadReceipt(created.id, receiptFile);
+      }
       setToast({ show: true, message: 'New expense logged to ledger!', type: 'success' });
       setIsAddModalOpen(false);
       loadExpenses();
@@ -656,6 +700,14 @@ function Expenses() {
                                   <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
                                     {expense.description}
                                   </span>
+                                  {expense.receipt_url && (
+                                    <span 
+                                      title="Receipt proof attached" 
+                                      style={{ display: 'inline-flex', alignItems: 'center', marginLeft: '6px', color: '#27e0a9' }}
+                                    >
+                                      <Paperclip size={12} />
+                                    </span>
+                                  )}
                                   {isSelected && <ArrowRight size={13} color="#a078ff" />}
                                 </div>
                                 <div className="merchant-sub">Direct Debit • {expense.category || 'Ledger Entry'}</div>
@@ -851,33 +903,139 @@ function Expenses() {
                 </div>
               </div>
 
-              {/* Matched Invoice / OCR Preview Box */}
+              {/* Matched Invoice & Proof Box */}
               <div>
                 <span style={{ fontSize: '11px', textTransform: 'uppercase', color: '#958ea0', letterSpacing: '0.05em', display: 'block', marginBottom: '8px' }}>
-                  Matched Invoice &amp; Proof
+                  Proof Document &amp; Invoice
                 </span>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderRadius: '10px', background: '#201f22', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ padding: '6px', borderRadius: '6px', background: 'rgba(255, 180, 171, 0.12)', color: '#ffb4ab' }}>
-                      <FileText size={18} />
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '12px', fontWeight: 600, color: '#e5e1e5' }}>
-                        invoice_{activeExpense.description.replace(/\s+/g, '_')}.pdf
+
+                {activeExpense.receipt_url ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px', borderRadius: '10px', background: '#201f22', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                        <div style={{ padding: '6px', borderRadius: '6px', background: 'rgba(39, 224, 169, 0.12)', color: '#27e0a9', flexShrink: 0 }}>
+                          <FileText size={18} />
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: '12px', fontWeight: 600, color: '#e5e1e5', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {activeExpense.receipt_url.split('/').pop()}
+                          </div>
+                          <div style={{ fontSize: '10px', color: '#27e0a9', fontFamily: 'var(--font-mono)' }}>
+                            Verified Ledger Proof
+                          </div>
+                        </div>
                       </div>
-                      <div style={{ fontSize: '10px', color: '#27e0a9', fontFamily: 'var(--font-mono)' }}>
-                        OCR Verified 100% Match
+
+                      <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+                        <button 
+                          className="btn-stitch-secondary"
+                          style={{ padding: '4px 8px', fontSize: '11px' }}
+                          onClick={() => setReceiptLightboxUrl(expenseService.getReceiptFullUrl(activeExpense.receipt_url))}
+                          title="View receipt"
+                        >
+                          <Eye size={12} style={{ marginRight: '3px' }} />
+                          View
+                        </button>
+                        <button 
+                          className="btn-stitch-secondary"
+                          style={{ padding: '4px 6px', fontSize: '11px', color: '#ffb4ab' }}
+                          onClick={() => handleDeleteReceipt(activeExpense.id)}
+                          title="Remove receipt"
+                        >
+                          <Trash2 size={13} />
+                        </button>
                       </div>
                     </div>
+
+                    {/* Inline Image Thumbnail if image format */}
+                    {/\.(png|jpe?g|webp)$/i.test(activeExpense.receipt_url) && (
+                      <div 
+                        onClick={() => setReceiptLightboxUrl(expenseService.getReceiptFullUrl(activeExpense.receipt_url))}
+                        style={{ 
+                          width: '100%', 
+                          height: '90px', 
+                          borderRadius: '6px', 
+                          overflow: 'hidden', 
+                          cursor: 'pointer',
+                          background: '#121218',
+                          border: '1px solid rgba(255,255,255,0.08)',
+                          position: 'relative'
+                        }}
+                        title="Click to zoom receipt"
+                      >
+                        <img 
+                          src={expenseService.getReceiptFullUrl(activeExpense.receipt_url)} 
+                          alt="Receipt thumbnail" 
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                        />
+                        <div style={{ 
+                          position: 'absolute', 
+                          bottom: 4, 
+                          right: 4, 
+                          padding: '2px 6px', 
+                          borderRadius: '4px', 
+                          background: 'rgba(0,0,0,0.65)', 
+                          fontSize: '10px', 
+                          color: '#e5e1e5',
+                          backdropFilter: 'blur(4px)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '3px'
+                        }}>
+                          <Eye size={10} />
+                          Expand
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <button 
-                    className="btn-stitch-secondary"
-                    style={{ padding: '4px 8px', fontSize: '11px' }}
-                    onClick={() => setToast({ show: true, message: 'Opening invoice PDF reader...', type: 'success' })}
+                ) : (
+                  <div 
+                    onClick={() => fileInputRef.current?.click()}
+                    style={{ 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      padding: '16px 12px', 
+                      borderRadius: '10px', 
+                      background: '#1b1b1e', 
+                      border: '1px dashed rgba(255,255,255,0.15)', 
+                      cursor: 'pointer',
+                      transition: 'border-color 0.2s'
+                    }}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      if (e.dataTransfer.files?.[0]) {
+                        handleUploadReceipt({ target: { files: e.dataTransfer.files } });
+                      }
+                    }}
                   >
-                    View
-                  </button>
-                </div>
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      onChange={handleUploadReceipt} 
+                      accept="image/png,image/jpeg,image/webp,application/pdf" 
+                      style={{ display: 'none' }} 
+                    />
+                    {isUploadingReceipt ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#8B5CF6' }}>
+                        <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                        <span style={{ fontSize: '12px' }}>Uploading proof...</span>
+                      </div>
+                    ) : (
+                      <>
+                        <Upload size={18} color="#958ea0" style={{ marginBottom: '6px' }} />
+                        <span style={{ fontSize: '12px', color: '#e5e1e5', fontWeight: 500 }}>
+                          Upload Receipt / Invoice
+                        </span>
+                        <span style={{ fontSize: '10px', color: '#958ea0', marginTop: '2px' }}>
+                          PNG, JPG, PDF up to 10MB
+                        </span>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Immutable Audit Trace Timeline */}
@@ -984,6 +1142,108 @@ function Expenses() {
         onClose={() => setIsImportModalOpen(false)}
         onImportSuccess={handleImportSuccess}
       />
+
+      {/* Receipt Preview Lightbox Modal */}
+      {receiptLightboxUrl && (
+        <div 
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            background: 'rgba(0, 0, 0, 0.88)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px'
+          }}
+          onClick={() => setReceiptLightboxUrl(null)}
+        >
+          <div 
+            style={{
+              position: 'relative',
+              maxWidth: '850px',
+              maxHeight: '90vh',
+              width: '100%',
+              background: '#121218',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '16px',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Lightbox Header */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '14px 20px',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+              background: 'rgba(255, 255, 255, 0.02)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FileText size={18} color="#27e0a9" />
+                <span style={{ fontSize: '14px', fontWeight: 600, color: '#e5e1e5' }}>
+                  Proof Document Viewer
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <a 
+                  href={receiptLightboxUrl} 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  download
+                  className="btn-stitch-secondary"
+                  style={{ padding: '6px 12px', fontSize: '12px', textDecoration: 'none' }}
+                >
+                  <Download size={14} />
+                  <span>Download</span>
+                </a>
+                <button 
+                  onClick={() => setReceiptLightboxUrl(null)}
+                  className="btn-stitch-secondary"
+                  style={{ padding: '6px 10px', fontSize: '12px' }}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+
+            {/* Lightbox Content */}
+            <div style={{
+              padding: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'auto',
+              maxHeight: 'calc(90vh - 65px)'
+            }}>
+              {/\.pdf$/i.test(receiptLightboxUrl) ? (
+                <iframe 
+                  src={receiptLightboxUrl} 
+                  title="Receipt PDF" 
+                  style={{ width: '100%', height: '70vh', border: 'none', borderRadius: '8px' }} 
+                />
+              ) : (
+                <img 
+                  src={receiptLightboxUrl} 
+                  alt="Receipt Full Preview" 
+                  style={{ 
+                    maxWidth: '100%', 
+                    maxHeight: '75vh', 
+                    objectFit: 'contain',
+                    borderRadius: '8px',
+                    boxShadow: '0 8px 30px rgba(0,0,0,0.5)'
+                  }} 
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
