@@ -32,24 +32,27 @@ export const CurrencyProvider = ({ children }) => {
     localStorage.setItem('currency', newCurrency);
   };
 
-  const formatCurrency = (amountInINR) => {
-    if (isNaN(amountInINR) || amountInINR === null) return '₹0';
+  const formatCurrency = (amountInBase) => {
+    if (isNaN(amountInBase) || amountInBase === null) return '$0.00';
     
     const rate = rates[currency] || 1;
-    const convertedAmount = amountInINR * rate;
+    const convertedAmount = Number(amountInBase) * rate;
     
-    let locale = 'en-IN';
-    if (currency === 'USD') locale = 'en-US';
-    else if (currency === 'EUR') locale = 'en-DE';
+    let locale = 'en-US';
+    if (currency === 'INR') locale = 'en-IN';
+    else if (currency === 'EUR') locale = 'de-DE';
     else if (currency === 'GBP') locale = 'en-GB';
     else if (currency === 'JPY') locale = 'ja-JP';
     else if (currency === 'AUD') locale = 'en-AU';
     else if (currency === 'CAD') locale = 'en-CA';
 
+    const isZeroDecimal = currency === 'JPY';
+
     return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: currency,
-      maximumFractionDigits: 0
+      minimumFractionDigits: isZeroDecimal ? 0 : 2,
+      maximumFractionDigits: isZeroDecimal ? 0 : 2
     }).format(convertedAmount);
   };
 

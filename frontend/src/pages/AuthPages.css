@@ -1,47 +1,291 @@
+/* AuthPages.css — Montrix Reference Stitch Aesthetic */
+
 .auth-container {
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  padding: var(--space-4);
-  background: radial-gradient(ellipse at top left, rgba(6, 214, 160, 0.05), transparent 50%), var(--bg-primary);
+  padding: 24px;
+  background: 
+    radial-gradient(ellipse at 50% 15%, rgba(160, 120, 255, 0.12) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 85%, rgba(93, 230, 255, 0.05) 0%, transparent 60%),
+    #050507;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-ambient-glow {
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 500px;
+  height: 250px;
+  background: radial-gradient(circle, rgba(160, 120, 255, 0.15) 0%, transparent 70%);
+  filter: blur(80px);
+  pointer-events: none;
 }
 
 .auth-card {
   width: 100%;
-  max-width: 400px;
-  padding: var(--space-8);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
+  max-width: 440px;
+  border-radius: 18px;
+  background: rgba(12, 12, 18, 0.92);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 2px solid #a078ff;
+  padding: 36px 32px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.02);
+  position: relative;
+  z-index: 1;
 }
 
+/* Header & Logo */
 .auth-header {
   text-align: center;
+  margin-bottom: 28px;
 }
 
-.auth-header h2 {
-  color: var(--accent-primary);
-  margin-bottom: var(--space-2);
+.auth-logo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  background: rgba(160, 120, 255, 0.1);
+  border: 1px solid rgba(160, 120, 255, 0.25);
+  color: #d0bcff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+  margin-bottom: 14px;
 }
 
+.auth-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.4px;
+}
+
+.auth-subtitle {
+  font-size: 13px;
+  color: #958ea0;
+  margin: 0;
+  line-height: 1.45;
+}
+
+/* Form Groups */
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: 18px;
 }
 
+.auth-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.auth-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #CBC3D7;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.auth-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.auth-input-icon {
+  position: absolute;
+  left: 12px;
+  color: #64748B;
+  pointer-events: none;
+}
+
+.auth-input {
+  width: 100%;
+  height: 42px;
+  padding: 0 40px 0 38px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  color: #FFFFFF;
+  font-size: 13px;
+  outline: none;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.auth-input:focus {
+  border-color: #a078ff;
+  background: rgba(160, 120, 255, 0.04);
+  box-shadow: 0 0 0 3px rgba(160, 120, 255, 0.15);
+}
+
+.auth-input-btn {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  color: #64748B;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.auth-input-btn:hover {
+  color: #CBC3D7;
+}
+
+/* Password Strength Indicator */
+.auth-strength-meter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.auth-strength-bar {
+  flex: 1;
+  height: 3px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.08);
+  transition: background 0.3s ease;
+}
+
+.auth-strength-bar.active-weak {
+  background: #ffb4ab;
+}
+
+.auth-strength-bar.active-medium {
+  background: #FBBF24;
+}
+
+.auth-strength-bar.active-strong {
+  background: #27e0a9;
+}
+
+.auth-strength-text {
+  font-size: 10px;
+  color: #958ea0;
+  font-family: var(--font-mono);
+  margin-left: 6px;
+}
+
+/* Submit & Demo Buttons */
+.auth-submit-btn {
+  width: 100%;
+  height: 44px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #a078ff 0%, #7c4dff 100%);
+  color: #FFFFFF;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 20px rgba(160, 120, 255, 0.35);
+  margin-top: 6px;
+}
+
+.auth-submit-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(160, 120, 255, 0.45);
+}
+
+.auth-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+  color: #64748B;
+  font-size: 11px;
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.auth-demo-btn {
+  width: 100%;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid rgba(93, 230, 255, 0.25);
+  background: rgba(93, 230, 255, 0.06);
+  color: #5de6ff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.auth-demo-btn:hover {
+  background: rgba(93, 230, 255, 0.12);
+  border-color: rgba(93, 230, 255, 0.4);
+}
+
+/* Footer Switcher */
 .auth-footer {
   text-align: center;
-  margin-top: var(--space-2);
+  margin-top: 24px;
+  font-size: 12px;
+  color: #958ea0;
 }
 
 .auth-link {
-  color: var(--accent-primary);
+  color: #d0bcff;
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 600;
+  margin-left: 4px;
+  transition: color 0.2s;
 }
 
 .auth-link:hover {
+  color: #FFFFFF;
   text-decoration: underline;
+}
+
+.auth-error-alert {
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(255, 180, 171, 0.1);
+  border: 1px solid rgba(255, 180, 171, 0.25);
+  color: #ffb4ab;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
 }
