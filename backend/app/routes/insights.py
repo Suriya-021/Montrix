@@ -1,7 +1,7 @@
 import os
 import json
 from fastapi import APIRouter, Depends, HTTPException
-import google.generativeai as genai
+from google import genai
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -13,12 +13,11 @@ load_dotenv()
 
 router = APIRouter(prefix="/api/insights", tags=["Insights"])
 
-def get_gemini_model():
+def get_gemini_client():
     load_dotenv(override=True)
     api_key = os.getenv("GEMINI_API_KEY")
     if api_key and api_key != "your_gemini_api_key_here":
-        genai.configure(api_key=api_key)
-        return genai.GenerativeModel('gemini-flash-latest')
+        return genai.Client(api_key=api_key)
     return None
 
 @router.get("/coach")
@@ -26,8 +25,8 @@ def get_ai_coach_insights(current_user: dict = Depends(get_current_user)):
     """
     Sends the user's current month spending data to Gemini AI and returns 3 personalized insights.
     """
-    model = get_gemini_model()
-    if not model:
+    client = get_gemini_client()
+    if not client:
         raise HTTPException(
             status_code=503, 
             detail="AI Coach is not configured. Please add a valid GEMINI_API_KEY to the .env file."
@@ -65,9 +64,12 @@ def get_ai_coach_insights(current_user: dict = Depends(get_current_user)):
         - Return the response EXACTLY as a valid JSON array of 3 strings. Example: ["Tip 1", "Tip 2", "Tip 3"]
         """
         
-        # 3. Call the Real Gemini API
-        response = model.generate_content(prompt)
-        response_text = response.text.strip()
+        # 3. Call the Modern Google GenAI API
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt
+        )
+        response_text = (response.text or "").strip()
         
         import re
         # Find JSON array using regex just in case it added conversational text
