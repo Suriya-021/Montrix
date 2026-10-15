@@ -142,3 +142,17 @@ def test_due_subscriptions_and_batch_processing(client, test_user):
     assert result["processed_count"] >= 1
     assert result["total_amount"] >= 1250.0
 
+def test_system_auto_rollover_engine(client, test_user):
+    from app.database.subscription_db import process_system_due_subscriptions
+    # Create an overdue subscription
+    create_res = client.post("/api/subscriptions/", json={
+        "title": "Google One Storage",
+        "amount": 130.0,
+        "frequency": "Monthly",
+        "next_due_date": "2026-01-01"
+    }, headers=test_user["headers"])
+    assert create_res.status_code == 201
+
+    count = process_system_due_subscriptions()
+    assert count >= 1
+

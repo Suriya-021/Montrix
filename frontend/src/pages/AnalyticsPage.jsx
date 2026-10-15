@@ -6,11 +6,12 @@ import {
 import { expenseService } from '../services/expenseService';
 import { useCurrency } from '../context/CurrencyContext';
 import AICoachWidget from '../components/AICoach/AICoachWidget';
+import ExecutiveReportModal from '../components/ExecutiveReport/ExecutiveReportModal';
 import Toast from '../components/Toast/Toast';
 import { 
   Loader2, Download, TrendingUp, BarChart3, 
   Calendar, PieChart, Sparkles, ArrowUpRight,
-  ChevronRight, CheckCircle2, Sliders, ShieldCheck
+  ChevronRight, CheckCircle2, Sliders, ShieldCheck, Printer
 } from 'lucide-react';
 import './AnalyticsPage.css';
 
@@ -34,6 +35,7 @@ function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState(6); // Default 6 months
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
 
   useEffect(() => {
@@ -201,7 +203,15 @@ function AnalyticsPage() {
         </div>
 
         {/* Action Button */}
-        <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button 
+            className="btn-stitch-secondary" 
+            onClick={() => setIsReportModalOpen(true)}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            <Printer size={15} />
+            <span>Executive PDF</span>
+          </button>
           <button 
             className="btn-stitch-primary" 
             onClick={handleExport}
@@ -209,7 +219,7 @@ function AnalyticsPage() {
             style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
           >
             {isExporting ? <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> : <Download size={15} />}
-            <span>Export Statement (CSV)</span>
+            <span>Export CSV</span>
           </button>
         </div>
       </div>
@@ -413,6 +423,14 @@ function AnalyticsPage() {
           </div>
         </div>
       </div>
+
+      {/* Executive Financial Statement Report Modal */}
+      <ExecutiveReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        expenses={expenses}
+        periodLabel={`Historical Analysis (${timeRange === 1 ? 'Last 30 Days' : `${timeRange} Months Window`})`}
+      />
     </div>
   );
 }

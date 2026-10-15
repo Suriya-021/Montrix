@@ -6,6 +6,7 @@ import AddExpenseModal from './components/AddExpenseModal/AddExpenseModal';
 import Toast from './components/Toast/Toast';
 import ProtectedRoute from './components/ProtectedRoute';
 import { expenseService } from './services/expenseService';
+import { subscriptionService } from './services/subscriptionService';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from './hooks/useAuth';
 
@@ -21,11 +22,28 @@ import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
 
 const Analytics = lazy(() => import('./pages/AnalyticsPage'));
 const SettingsPage = lazy(() => import('./pages/Settings/SettingsPage'));
+import OfflineBanner from './components/OfflineBanner/OfflineBanner';
 
 // V2 Protected Layout with TopNavbar
 const ProtectedLayout = ({ handleAddExpense, toast, setToast, showModal, setShowModal, handleSaveExpense }) => {
   const location = useLocation();
   const isDashboard = location.pathname === '/';
+
+  // Automated Subscription Rollover on session load
+  useEffect(() => {
+    subscriptionService.processAllDue().then((res) => {
+      if (res && res.processed_count > 0) {
+        setToast({
+          show: true,
+          message: `Auto-processed ${res.processed_count} recurring bills due today!`,
+          type: 'success'
+        });
+        window.dispatchEvent(new Event('expenseDataChanged'));
+      }
+    }).catch(() => {
+      // Graceful fallback if offline
+    });
+  }, [setToast]);
 
   return (
     <div className="app-layout">
@@ -133,6 +151,7 @@ function App() {
             </ProtectedRoute>
           } />
         </Routes>
+        <OfflineBanner />
       </ErrorBoundary>
     </Router>
   );

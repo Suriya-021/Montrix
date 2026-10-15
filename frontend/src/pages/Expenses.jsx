@@ -5,12 +5,13 @@ import {
   ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown,
   Filter, SlidersHorizontal, CheckCircle2, ShieldCheck,
   AlertTriangle, Copy, Check, FileText, ArrowRight, X, Clock,
-  CreditCard, DollarSign, Activity, Sparkles, Plus, Paperclip, Eye, ExternalLink
+  CreditCard, DollarSign, Activity, Sparkles, Plus, Paperclip, Eye, ExternalLink, Printer
 } from 'lucide-react';
 import { expenseService } from '../services/expenseService';
 import { categoryService } from '../services/categoryService';
 import AddExpenseModal from '../components/AddExpenseModal/AddExpenseModal';
 import ImportExpensesModal from '../components/ImportExpensesModal/ImportExpensesModal';
+import ExecutiveReportModal from '../components/ExecutiveReport/ExecutiveReportModal';
 import Toast from '../components/Toast/Toast';
 import { useCurrency } from '../context/CurrencyContext';
 import './Expenses.css';
@@ -85,6 +86,7 @@ function Expenses() {
   const [copiedUuid, setCopiedUuid] = useState(false);
   const [isUploadingReceipt, setIsUploadingReceipt] = useState(false);
   const [receiptLightboxUrl, setReceiptLightboxUrl] = useState(null);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const fileInputRef = useRef(null);
 
   // Loading & error
@@ -404,7 +406,17 @@ function Expenses() {
             type="button"
           >
             <Download size={16} />
-            <span>Export Statement</span>
+            <span>Export CSV</span>
+          </button>
+
+          {/* Executive PDF Report */}
+          <button 
+            className="btn-stitch-secondary"
+            onClick={() => setIsReportModalOpen(true)}
+            type="button"
+          >
+            <Printer size={16} />
+            <span>Executive PDF</span>
           </button>
 
           {/* Log Expense */}
@@ -1244,6 +1256,15 @@ function Expenses() {
           </div>
         </div>
       )}
+
+      {/* Executive Financial Statement Report Modal */}
+      <ExecutiveReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        expenses={expenses}
+        stats={globalStats}
+        periodLabel={datePreset === 'this-month' ? 'Current Month (MTD)' : datePreset === 'last-month' ? 'Last Month' : datePreset === '30-days' ? 'Last 30 Days' : 'Historical Ledger'}
+      />
     </div>
   );
 }

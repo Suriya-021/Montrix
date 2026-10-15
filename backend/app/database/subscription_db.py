@@ -202,3 +202,43 @@ def process_all_due_subscriptions(user_id: int):
         raise
     finally:
         db.close()
+
+def process_system_due_subscriptions():
+    """
+    Background automated engine: sweeps all subscriptions across all users
+    whose next_due_date <= today, logs an expense for each due cycle,
+    and rolls forward next_due_date.
+    """
+    db = SessionLocal()
+    try:
+        today = date.today()
+        due_subs = db.query(Subscription).filter(
+            Subscription.next_due_date <= today
+        ).all()
+        
+        if not due_subs:
+            return 0
+            
+        count = 0
+        for sub in due_subs:
+            expense_date = sub.next_due_date or today
+            new_expense = Expense(
+                user_id=sub.user_id,
+                amount=sub.amount,
+                category="Bills",
+                description=f"{sub.title} ({sub.frequency} Bill - Auto-Rolled)",
+                date=expense_date
+            )
+            db.add(new_expense)
+            new_due = compute_next_due_date(expense_date, sub.frequency)
+            sub.next_due_date = new_due
+            count += 1
+            
+        db.commit()
+        return count
+    except Exception as err:
+        db.rollback()
+        print("Error in process_system_due_subscriptions:", err)
+        return 0
+    finally:
+        db.close()

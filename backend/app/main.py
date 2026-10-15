@@ -15,6 +15,21 @@ from app.routes.categories import router as categories_router
 from app.routes import auth
 
 from app.database.expense_db import ensure_expense_columns
+from app.database.subscription_db import process_system_due_subscriptions
+import asyncio
+
+async def _subscription_rollover_worker():
+    while True:
+        try:
+            processed = process_system_due_subscriptions()
+            if processed > 0:
+                print(f"[Subscription Engine] Auto-processed {processed} recurring bills.")
+        except Exception as err:
+            print("[Subscription Engine Worker Error]:", err)
+        try:
+            await asyncio.sleep(3600)
+        except asyncio.CancelledError:
+            break
 
 # This "lifespan" function runs exactly once when the server starts up,
 # and again when it shuts down. We use it to prepare things.
@@ -24,7 +39,9 @@ async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
     ensure_expense_columns()
     print("Database ready!")
+    worker_task = asyncio.create_task(_subscription_rollover_worker())
     yield
+    worker_task.cancel()
     print("Shutting down server...")
 
 from dotenv import load_dotenv
