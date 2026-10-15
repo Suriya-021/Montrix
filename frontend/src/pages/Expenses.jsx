@@ -95,11 +95,20 @@ function Expenses() {
 
   // Filters & Search
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState('All');
   const [datePreset, setDatePreset] = useState('this-month');
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
   const [auditFilter, setAuditFilter] = useState('all'); // 'all' | 'reconciled' | 'missing' | 'schedec'
+
+  // Debounce search keystrokes to eliminate UI stutter and network flooding
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   // Sorting
   const [sortBy, setSortBy] = useState('date'); // 'date' | 'amount'
@@ -151,7 +160,7 @@ function Expenses() {
 
       const params = {
         category: filterCategory,
-        search: searchTerm,
+        search: debouncedSearch,
         startDate,
         endDate,
         sortBy,
@@ -166,20 +175,25 @@ function Expenses() {
         setExpenses(result.items);
         setTotalCount(result.total);
         setTotalPages(result.total_pages || 1);
-        if (result.items.length > 0 && !selectedExpenseId) {
-          setSelectedExpenseId(result.items[0].id);
+        if (result.items.length > 0) {
+          setSelectedExpenseId(prev => (prev && result.items.some(i => i.id === prev)) ? prev : result.items[0].id);
+        } else {
+          setSelectedExpenseId(null);
         }
       } else if (Array.isArray(result)) {
         setExpenses(result);
         setTotalCount(result.length);
         setTotalPages(1);
-        if (result.length > 0 && !selectedExpenseId) {
-          setSelectedExpenseId(result[0].id);
+        if (result.length > 0) {
+          setSelectedExpenseId(prev => (prev && result.some(i => i.id === prev)) ? prev : result[0].id);
+        } else {
+          setSelectedExpenseId(null);
         }
       } else {
         setExpenses([]);
         setTotalCount(0);
         setTotalPages(1);
+        setSelectedExpenseId(null);
       }
     } catch (err) {
       console.error('Error fetching expenses:', err);
@@ -187,7 +201,7 @@ function Expenses() {
     } finally {
       setIsLoading(false);
     }
-  }, [datePreset, customStartDate, customEndDate, filterCategory, searchTerm, sortBy, sortOrder, page, pageSize, selectedExpenseId]);
+  }, [datePreset, customStartDate, customEndDate, filterCategory, debouncedSearch, sortBy, sortOrder, page, pageSize]);
 
   useEffect(() => {
     loadExpenses();
@@ -512,7 +526,7 @@ function Expenses() {
             <span>Invoices &gt; $500 threshold</span>
             <button 
               style={{ background: '#2a2a2d', color: '#e5e1e5', border: 'none', padding: '2px 8px', borderRadius: '4px', cursor: 'pointer' }}
-              onClick={() => { setSearchTerm(''); setFilterCategory('All'); }}
+              onClick={() => { setSearchTerm(''); setDebouncedSearch(''); setFilterCategory('All'); }}
             >
               Filter
             </button>
@@ -578,6 +592,7 @@ function Expenses() {
                 className="expenses-filter-pill-btn"
                 onClick={() => {
                   setSearchTerm('');
+                  setDebouncedSearch('');
                   setFilterCategory('All');
                   setDatePreset('this-month');
                   setPage(1);

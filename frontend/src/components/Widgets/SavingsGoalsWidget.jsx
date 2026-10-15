@@ -104,4 +104,4 @@ const SavingsGoalsWidget = ({ goals = [], formatCurrency }) => {
   );
 };
 
-export default SavingsGoalsWidget;
+export default React.memo(SavingsGoalsWidget);

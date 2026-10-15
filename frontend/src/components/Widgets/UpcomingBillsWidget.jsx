@@ -159,4 +159,4 @@ const UpcomingBillsWidget = ({ bills = [], formatCurrency, onBillPaid }) => {
   );
 };
 
-export default UpcomingBillsWidget;
+export default React.memo(UpcomingBillsWidget);

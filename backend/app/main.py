@@ -21,7 +21,7 @@ import asyncio
 async def _subscription_rollover_worker():
     while True:
         try:
-            processed = process_system_due_subscriptions()
+            processed = await asyncio.to_thread(process_system_due_subscriptions)
             if processed > 0:
                 print(f"[Subscription Engine] Auto-processed {processed} recurring bills.")
         except Exception as err:

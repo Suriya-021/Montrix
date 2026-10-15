@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
   Tooltip, ResponsiveContainer, Cell 
@@ -31,7 +31,6 @@ const CATEGORY_COLORS = {
 function AnalyticsPage() {
   const { formatCurrency } = useCurrency();
   const [expenses, setExpenses] = useState([]);
-  const [chartData, setChartData] = useState([]);
   const [timeRange, setTimeRange] = useState(6); // Default 6 months
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
@@ -46,20 +45,12 @@ function AnalyticsPage() {
     return () => window.removeEventListener('expenseDataChanged', handleSync);
   }, []);
 
-  // Re-process chart when data or timeRange changes
-  useEffect(() => {
-    if (expenses.length > 0) {
-      processTrendData(expenses, timeRange);
-    }
-  }, [timeRange, expenses]);
-
   const loadData = async () => {
     try {
       setIsLoading(true);
       const data = await expenseService.getAll();
       const expenseList = Array.isArray(data) ? data : (data?.items || []);
       setExpenses(expenseList);
-      processTrendData(expenseList, timeRange);
     } catch (err) {
       console.error(err);
       setToast({ show: true, message: 'Failed to load analytics trends.', type: 'error' });
@@ -68,12 +59,15 @@ function AnalyticsPage() {
     }
   };
 
-  const processTrendData = (allExpenses, monthsCount) => {
+  // Memoized Chart Trend Data computation (zero duplicate passes, runs only when data or timeRange changes)
+  const chartData = useMemo(() => {
+    if (!expenses.length) return [];
+
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
 
-    if (monthsCount === 1) {
+    if (timeRange === 1) {
       // "This Month" - Group by 4 Weeks
       const weeks = [
         { label: 'Week 1', amount: 0, min: 1, max: 7 },
@@ -82,7 +76,7 @@ function AnalyticsPage() {
         { label: 'Week 4+', amount: 0, min: 22, max: 31 }
       ];
 
-      allExpenses.forEach(exp => {
+      expenses.forEach(exp => {
         const date = new Date(exp.date);
         if (date.getMonth() === currentMonth && date.getFullYear() === currentYear) {
           const day = date.getDate();
@@ -93,12 +87,12 @@ function AnalyticsPage() {
         }
       });
 
-      setChartData(weeks);
+      return weeks;
     } else {
       // Multi-Month (3, 6, 12) - Group by Month
       const months = [];
       
-      for (let i = monthsCount - 1; i >= 0; i--) {
+      for (let i = timeRange - 1; i >= 0; i--) {
         const d = new Date(currentYear, currentMonth - i, 1);
         months.push({
           label: d.toLocaleDateString('default', { month: 'short' }),
@@ -108,7 +102,7 @@ function AnalyticsPage() {
         });
       }
 
-      allExpenses.forEach(exp => {
+      expenses.forEach(exp => {
         const date = new Date(exp.date);
         const m = date.getMonth();
         const y = date.getFullYear();
@@ -119,9 +113,9 @@ function AnalyticsPage() {
         }
       });
 
-      setChartData(months);
+      return months;
     }
-  };
+  }, [expenses, timeRange]);
 
   const handleExport = async () => {
     try {
@@ -135,27 +129,34 @@ function AnalyticsPage() {
     }
   };
 
-  // Metrics calculation
-  const totalAnalyzed = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-  const monthlyAverage = chartData.length > 0 
-    ? chartData.reduce((sum, c) => sum + c.amount, 0) / chartData.length 
-    : 0;
+  // Memoized Metrics calculations
+  const totalAnalyzed = useMemo(() => {
+    return expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+  }, [expenses]);
 
-  // Category Pareto aggregation
-  const categoryTotals = expenses.reduce((acc, e) => {
-    const cat = e.category || 'Other';
-    acc[cat] = (acc[cat] || 0) + (Number(e.amount) || 0);
-    return acc;
-  }, {});
+  const monthlyAverage = useMemo(() => {
+    return chartData.length > 0 
+      ? chartData.reduce((sum, c) => sum + c.amount, 0) / chartData.length 
+      : 0;
+  }, [chartData]);
 
-  const sortedCategories = Object.entries(categoryTotals)
-    .map(([name, amount]) => ({
-      name,
-      amount,
-      color: CATEGORY_COLORS[name] || '#64748B',
-      percentage: totalAnalyzed > 0 ? Math.round((amount / totalAnalyzed) * 100) : 0
-    }))
-    .sort((a, b) => b.amount - a.amount);
+  // Memoized Category Pareto aggregation
+  const sortedCategories = useMemo(() => {
+    const categoryTotals = expenses.reduce((acc, e) => {
+      const cat = e.category || 'Other';
+      acc[cat] = (acc[cat] || 0) + (Number(e.amount) || 0);
+      return acc;
+    }, {});
+
+    return Object.entries(categoryTotals)
+      .map(([name, amount]) => ({
+        name,
+        amount,
+        color: CATEGORY_COLORS[name] || '#64748B',
+        percentage: totalAnalyzed > 0 ? Math.round((amount / totalAnalyzed) * 100) : 0
+      }))
+      .sort((a, b) => b.amount - a.amount);
+  }, [expenses, totalAnalyzed]);
 
   const topCategoryName = sortedCategories[0]?.name || 'None';
   const topCategoryAmount = sortedCategories[0]?.amount || 0;

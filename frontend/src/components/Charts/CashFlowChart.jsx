@@ -199,4 +199,4 @@ const CashFlowChart = ({ data = [] }) => {
   );
 };
 
-export default CashFlowChart;
+export default React.memo(CashFlowChart);

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { PieChart as PieIcon } from 'lucide-react';
 import './Charts.css';
@@ -20,15 +20,17 @@ const CATEGORY_COLORS = {
 const CategoryDonut = ({ data = [], totalValue, formatCurrency }) => {
   const rawData = Array.isArray(data) ? data : [];
   
-  // Normalize breakdown data with colors
-  const chartData = rawData
-    .filter(item => Number(item.value || 0) > 0)
-    .map(item => ({
-      name: item.name || 'Other',
-      value: Number(item.value || 0),
-      color: item.color || CATEGORY_COLORS[item.name] || '#64748B'
-    }))
-    .sort((a, b) => b.value - a.value);
+  // Normalize breakdown data with colors (memoized to eliminate re-allocation)
+  const chartData = useMemo(() => {
+    return rawData
+      .filter(item => Number(item.value || 0) > 0)
+      .map(item => ({
+        name: item.name || 'Other',
+        value: Number(item.value || 0),
+        color: item.color || CATEGORY_COLORS[item.name] || '#64748B'
+      }))
+      .sort((a, b) => b.value - a.value);
+  }, [rawData]);
 
   const displayTotal = totalValue || (formatCurrency ? formatCurrency(0) : '$0.00');
 
@@ -144,4 +146,4 @@ const CategoryDonut = ({ data = [], totalValue, formatCurrency }) => {
   );
 };
 
-export default CategoryDonut;
+export default React.memo(CategoryDonut);

@@ -213,4 +213,4 @@ const TransactionsWidget = ({ transactions = [], formatCurrency, onAddExpense })
   );
 };
 
-export default TransactionsWidget;
+export default React.memo(TransactionsWidget);

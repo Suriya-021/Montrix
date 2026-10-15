@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Plus, FileText, Terminal, Bell, Clock, Loader2 
@@ -23,6 +23,31 @@ import Toast from '../components/Toast/Toast';
 
 import './Dashboard.css';
 
+function LiveUtcClock() {
+  const [timestamp, setTimestamp] = useState('');
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      const options = { month: 'short', day: '2-digit', year: 'numeric', timeZone: 'UTC' };
+      const datePart = now.toLocaleDateString('en-US', options);
+      const timePart = now.toISOString().slice(11, 19);
+      setTimestamp(`As of ${datePart} • ${timePart} UTC`);
+    };
+
+    updateTime();
+    const timer = setInterval(updateTime, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <span className="status-time-text">
+      <Clock size={13} />
+      {timestamp}
+    </span>
+  );
+}
+
 function Dashboard() {
   const navigate = useNavigate();
   const { currency, formatCurrency } = useCurrency();
@@ -41,23 +66,6 @@ function Dashboard() {
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
-
-  // Live UTC Clock
-  const [utcTimestamp, setUtcTimestamp] = useState('');
-
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      const options = { month: 'short', day: '2-digit', year: 'numeric', timeZone: 'UTC' };
-      const datePart = now.toLocaleDateString('en-US', options);
-      const timePart = now.toISOString().slice(11, 19);
-      setUtcTimestamp(`As of ${datePart} • ${timePart} UTC`);
-    };
-
-    updateTime();
-    const timer = setInterval(updateTime, 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   // User Profile
   const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -128,45 +136,78 @@ function Dashboard() {
     loadDashboardData();
   };
 
-  // 100% Real Calculations based on actual user data
-  const totalIncome = incomeList.reduce((sum, item) => sum + Number(item.amount || 0), 0);
-  
-  const currentMonthKey = new Date().toISOString().slice(0, 7);
-  const thisMonthIncome = incomeList
-    .filter(i => i.date && String(i.date).startsWith(currentMonthKey))
-    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  // 100% Real Calculations based on actual user data (memoized to eliminate re-computation on modal/toast state updates)
+  const {
+    totalIncome,
+    thisMonthIncome,
+    totalSpent,
+    thisMonthSpent,
+    netBalance,
+    netSavings,
+    savingsRate,
+    totalGoalsSaved,
+    totalGoalsTarget,
+    goalsFundedPct,
+    totalBudget,
+    budgetUsedPct,
+    budgetRemaining,
+    balanceSparkline,
+    latestIncome
+  } = useMemo(() => {
+    const tIncome = incomeList.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    
+    const currentMonthKey = new Date().toISOString().slice(0, 7);
+    const tmIncome = incomeList
+      .filter(i => i.date && String(i.date).startsWith(currentMonthKey))
+      .reduce((sum, item) => sum + Number(item.amount || 0), 0);
 
-  const totalSpent = Number(stats?.total_spent || 0);
-  const thisMonthSpent = Number(stats?.this_month_spent || stats?.month_spent || 0);
+    const tSpent = Number(stats?.total_spent || 0);
+    const tmSpent = Number(stats?.this_month_spent || stats?.month_spent || 0);
 
-  const netBalance = totalIncome - totalSpent;
-  const netSavings = Math.max(0, netBalance);
-  const savingsRate = totalIncome > 0 
-    ? Math.max(0, Math.round(((totalIncome - totalSpent) / totalIncome) * 100)) 
-    : 0;
+    const nBalance = tIncome - tSpent;
+    const nSavings = Math.max(0, nBalance);
+    const sRate = tIncome > 0 
+      ? Math.max(0, Math.round(((tIncome - tSpent) / tIncome) * 100)) 
+      : 0;
 
-  // Goals calculations
-  const totalGoalsSaved = activeGoals.reduce((sum, g) => sum + Number(g.current_amount || 0), 0);
-  const totalGoalsTarget = activeGoals.reduce((sum, g) => sum + Number(g.target_amount || 0), 0);
-  const goalsFundedPct = totalGoalsTarget > 0 
-    ? Math.min(100, Math.round((totalGoalsSaved / totalGoalsTarget) * 100)) 
-    : 0;
+    const tgSaved = activeGoals.reduce((sum, g) => sum + Number(g.current_amount || 0), 0);
+    const tgTarget = activeGoals.reduce((sum, g) => sum + Number(g.target_amount || 0), 0);
+    const gFundedPct = tgTarget > 0 
+      ? Math.min(100, Math.round((tgSaved / tgTarget) * 100)) 
+      : 0;
 
-  // Budgets calculations
-  const totalBudget = Number(budgetStatus?.total_budget || stats?.total_budget || 0);
-  const budgetUsedPct = Number(budgetStatus?.percentage_used || stats?.budget_used_percentage || 0);
-  const budgetRemaining = Math.max(0, totalBudget - thisMonthSpent);
+    const tBudget = Number(budgetStatus?.total_budget || stats?.total_budget || 0);
+    const bUsedPct = Number(budgetStatus?.percentage_used || stats?.budget_used_percentage || 0);
+    const bRemaining = Math.max(0, tBudget - tmSpent);
 
-  // Sparkline from real 6-month cashflow history
-  const balanceSparkline = (Array.isArray(cashFlowData) && cashFlowData.length > 0)
-    ? cashFlowData.map(d => ({
-        value: Math.max(0, Number(d.income || 0) - Number(d.expenses || 0) + 10)
-      }))
-    : [];
+    const bSparkline = (Array.isArray(cashFlowData) && cashFlowData.length > 0)
+      ? cashFlowData.map(d => ({
+          value: Math.max(0, Number(d.income || 0) - Number(d.expenses || 0) + 10)
+        }))
+      : [];
 
-  const latestIncome = incomeList.length > 0 
-    ? incomeList[incomeList.length - 1] 
-    : null;
+    const lIncome = incomeList.length > 0 
+      ? incomeList[incomeList.length - 1] 
+      : null;
+
+    return {
+      totalIncome: tIncome,
+      thisMonthIncome: tmIncome,
+      totalSpent: tSpent,
+      thisMonthSpent: tmSpent,
+      netBalance: nBalance,
+      netSavings: nSavings,
+      savingsRate: sRate,
+      totalGoalsSaved: tgSaved,
+      totalGoalsTarget: tgTarget,
+      goalsFundedPct: gFundedPct,
+      totalBudget: tBudget,
+      budgetUsedPct: bUsedPct,
+      budgetRemaining: bRemaining,
+      balanceSparkline: bSparkline,
+      latestIncome: lIncome
+    };
+  }, [incomeList, stats, budgetStatus, activeGoals, cashFlowData]);
 
   return (
     <div className="dashboard-ref-container">
@@ -191,10 +232,7 @@ function Dashboard() {
               <span className="pulse-dot"></span>
               LEDGER REAL-TIME SYNCED
             </span>
-            <span className="status-time-text">
-              <Clock size={13} />
-              {utcTimestamp}
-            </span>
+            <LiveUtcClock />
             <span className="status-currency-pill font-mono">
               {currency || 'USD'} (Base)
             </span>
